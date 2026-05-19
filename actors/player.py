@@ -116,15 +116,29 @@ class Player(Entity):
                 self.inventory.remove(item)
 
     def use_item(self, item):
-        if item.name == "Rat Meat":
-            hp_before = self.hp
-            self.hp = min(self.max_hp, self.hp + 4)
-            healed = self.hp - hp_before
-            hunger_before = self.hunger
-            self.hunger = min(self.max_hunger, self.hunger + item.nutrition_value)
-            fed = self.hunger - hunger_before
+        if item.category == 'consumable':
+            hp_healed = 0
+            hunger_fed = 0
+            
+            if item.hp_value > 0:
+                hp_before = self.hp
+                self.hp = min(self.max_hp, self.hp + item.hp_value)
+                hp_healed = self.hp - hp_before
+                
+            if item.nutrition_value > 0:
+                hunger_before = self.hunger
+                self.hunger = min(self.max_hunger, self.hunger + item.nutrition_value)
+                hunger_fed = self.hunger - hunger_before
+                
             self.remove_item(item, 1)
-            return f"You ate the Rat Meat! (+{healed} HP, +{fed} Hunger)"
+            
+            msg_parts = []
+            if hp_healed > 0: msg_parts.append(f"+{hp_healed} HP")
+            if hunger_fed > 0: msg_parts.append(f"+{hunger_fed} Hunger")
+            
+            if msg_parts:
+                return f"Used {item.name}! ({', '.join(msg_parts)})"
+            return f"Used {item.name}."
         return "Cannot use this item."
 
     def equip_item(self, item):
