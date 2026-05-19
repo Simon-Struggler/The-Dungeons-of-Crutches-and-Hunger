@@ -5,7 +5,7 @@ from ui.renderer import Renderer
 from actions.commands import MoveCommand, DescendCommand, WaitCommand, GetCommand, AttackCommand
 from map_gen.dungeon import generate_dungeon
 from actors.player import Player
-from items.item import RatMeat, DungeonKey, Item, OldSword, HatOfKnowledge, Glasses, Chainmail, GlovesOfDexterity, Spear, Buckler, LeggingsOfStrength, AchillesSandals
+from items.item import RatMeat, DungeonKey, Item, OldSword, HatOfKnowledge, Glasses, Chainmail, GlovesOfDexterity, Spear, Buckler, LeggingsOfStrength, AchillesSandals, CurvedSword, SoulReaper, WhiteMask, LifeGem, PotionOfHealing
 from save_manager import load_save, save_data
 from menu import Menu
 
@@ -76,7 +76,7 @@ class Engine:
         for enemy in self.enemies:
             enemy.engine_ref = self
 
-    def handle_enemy_deaths(self):
+   def handle_enemy_deaths(self):
         dead_enemies = []
         for enemy in self.enemies:
             if not enemy.is_alive():
@@ -88,25 +88,38 @@ class Engine:
                 if self.player.level > old_level:
                     self.add_log(f"LEVEL UP! You are now level {self.player.level}!")
                 
+                # ДРОП ВРАГОВ
+                ex, ey = enemy.x, enemy.y
                 if enemy.char == 'G':
-                    self.items.append(DungeonKey(enemy.x, enemy.y))
-                elif enemy.char == 'r' and random.random() < 0.5:
-                    self.items.append(RatMeat(enemy.x, enemy.y))
+                    self.items.append(DungeonKey(ex, ey))
+                elif enemy.char == 'R': # RatKing
+                    self.items.append(DungeonKey(ex, ey))
+                    for _ in range(5): self.items.append(RatMeat(ex, ey))
+                elif enemy.char == 'D': # DeathKnight
+                    self.items.append(DungeonKey(ex, ey))
+                    self.items.append(SoulReaper(ex, ey))
+                elif enemy.char == 'N': # Nightmare
+                    self.items.append(DungeonKey(ex, ey))
+                    self.items.append(WhiteMask(ex, ey))
+                elif enemy.char == 'r' or enemy.char == 'a': # Крысы и Злые крысы
+                    if random.random() < 0.5: self.items.append(RatMeat(ex, ey))
                 elif enemy.char == 'S':
-                    self.items.append(OldSword(enemy.x, enemy.y))
+                    self.items.append(OldSword(ex, ey))
+                elif enemy.char == 'Z':
+                    self.items.append(CurvedSword(ex, ey))
+                elif enemy.char == 'C':
+                    self.items.append(LifeGem(ex, ey))
+                    
         for enemy in dead_enemies:
             self.enemies.remove(enemy)
 
-    def generate_chest_loot(self):
-        """Генерирует 2-4 предмета для сундука. Гарантирует уникальную экипировку внутри."""
+ def generate_chest_loot(self):
         loot = []
-        spawned_names_this_chest = set() # Следим за дубликатами в ЭТОМ сундуке
-        available_equipment = [OldSword, HatOfKnowledge, Glasses, Chainmail, GlovesOfDexterity, Spear, Buckler, LeggingsOfStrength, AchillesSandals]
+        spawned_names_this_chest = set()
+        available_equipment = [OldSword, HatOfKnowledge, Glasses, Chainmail, GlovesOfDexterity, Spear, Buckler, LeggingsOfStrength, AchillesSandals, CurvedSword]
         
-        # Фильтруем экипировку, которую ещё не видели за весь забег
         unseen_equipment = [eq for eq in available_equipment if eq.__name__ not in self.spawned_equipment_names]
-        if not unseen_equipment:
-            unseen_equipment = available_equipment
+        if not unseen_equipment: unseen_equipment = available_equipment
             
         # 1 гарантированный предмет экипировки
         eq_class = random.choice(unseen_equipment)
@@ -114,19 +127,21 @@ class Engine:
         self.spawned_equipment_names.add(eq_class.__name__)
         spawned_names_this_chest.add(eq_class.__name__)
         
-        # От 1 до 3 дополнительных предметов (consumables или equipment)
-        for _ in range(random.randint(1, 3)):
-            if random.random() < 0.6:
-                loot.append(RatMeat(0, 0))
-            else:
-                # Исключаем то, что уже выпало в этом сундуке
+        # 1 Гарантированное Зелье Лечения
+        loot.append(PotionOfHealing(0, 0))
+        
+        # От 0 до 2 дополнительных предметов (consumables или equipment)
+        for _ in range(random.randint(0, 2)):
+            if random.random() < 0.6: # 60% шанс еды или камня
+                if random.random() < 0.5:
+                    loot.append(RatMeat(0, 0))
+                else:
+                    loot.append(LifeGem(0, 0))
+            else: # 40% шанс ещё одной экипировки
                 possible_eq = [eq for eq in available_equipment if eq.__name__ not in spawned_names_this_chest]
-                
                 if not possible_eq:
-                    # Если нам совсем не повезло и вся экипировка уже в сундуке, даём мясо вместо дубликата
                     loot.append(RatMeat(0, 0))
                     continue
-                    
                 eq_class = random.choice(possible_eq)
                 loot.append(eq_class(0, 0))
                 self.spawned_equipment_names.add(eq_class.__name__)
