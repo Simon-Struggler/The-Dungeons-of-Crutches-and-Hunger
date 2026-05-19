@@ -1,11 +1,15 @@
 from actors.entity import Entity
 
 class Player(Entity):
-    def __init__(self, x: int, y: int):
-        super().__init__(x, y, char="@", hp=10, base_attack=1, str_stat=1, dex_stat=1, con_stat=1)
+    def __init__(self, x: int, y: int, difficulty='medium'):
+        # Устанавливаем базовую атаку в зависимости от сложности
+        base_atk = 2 if difficulty == 'easy' else 1
+        
+        super().__init__(x, y, char="@", hp=10, base_attack=base_atk, str_stat=1, dex_stat=1, con_stat=1)
         self.level = 1
         self.xp = 0
         self.stat_points = 0
+        self.difficulty = difficulty # Сохраняем сложность
         
         self.inventory = []
         self.equipment = {
@@ -16,11 +20,9 @@ class Player(Entity):
         self.turns_waited = 0
         self.regen_clock = 0
         
-        # Базовое здоровье (растет при level_up)
         self.base_max_hp = 10
         self._recalculate_max_hp()
         
-        # Голод
         self.max_hunger = 300
         self.hunger = 300
         self._update_max_hunger()
@@ -240,15 +242,25 @@ class Player(Entity):
     def level_up(self):
         self.xp -= self.xp_to_next_level()
         self.level += 1
-        self.stat_points += 2
         
-        # Увеличиваем базовое здоровье
-        hp_gain = 4 + ((self.con_stat - 1) * 2)
+        # Очки характеристик в зависимости от сложности
+        if self.difficulty == 'easy':
+            self.stat_points += 3
+        elif self.difficulty == 'difficult':
+            self.stat_points += 1
+        else:
+            self.stat_points += 2 # Medium
+        
+        # Прирост здоровья в зависимости от сложности
+        if self.difficulty == 'easy':
+            hp_gain = 4 + ((self.con_stat - 1) * 4)
+        elif self.difficulty == 'difficult':
+            hp_gain = 2 + ((self.con_stat - 1) * 1)
+        else:
+            hp_gain = 4 + ((self.con_stat - 1) * 2) # Medium
+            
         self.base_max_hp += hp_gain
-        
         self._recalculate_max_hp()
-        
-        # Полное исцеление при повышении уровня
         self.hp = self.max_hp
         
         self._update_max_hunger()
