@@ -11,7 +11,7 @@ class WaitCommand(Command):
         pass
 
 class MoveCommand(Command):
-    def __init__(self, entity, dx: int, dy: int, game_map, player=None, enemies=None, is_free_attack=False):
+    def __init__(self, entity, dx: int, dy: int, game_map, player=None, enemies=None, is_free_attack=False, ignore_walls=False):
         self.entity = entity
         self.dx = dx
         self.dy = dy
@@ -19,12 +19,14 @@ class MoveCommand(Command):
         self.player = player
         self.enemies = enemies if enemies is not None else []
         self.is_free_attack = is_free_attack
+        self.ignore_walls = ignore_walls # Новый флаг
 
     def execute(self):
         new_x = self.entity.x + self.dx
         new_y = self.entity.y + self.dy
         
-        if not self.game_map.is_walkable(new_x, new_y):
+        # Передаем флаг ignore_walls
+        if not self.game_map.is_walkable(new_x, new_y, self.ignore_walls):
             return
 
         if isinstance(self.entity, Player):
