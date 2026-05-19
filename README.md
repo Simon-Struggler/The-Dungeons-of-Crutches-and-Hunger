@@ -2,6 +2,7 @@
 This is my first attempt at creating a game using Python. I wanted to make a classic Roguelike, similar to Rogue 1980 or Moria 1983 - a procedurally generated turn-based dungeon crawler with RPG elements, permadeath and ASCII graphics.
 
 --- LAUNCHING THE GAME ---
+
 You're going to need the 'curses' package. Use the 'pip install windows-curses' command. Once done, launch the game by typing 'python main.py' or 'py main.py', whichever works for you.
 Though you could always launch this game in github codespaces. I'm pretty sure you don't need to pip install curses that way.
 
