@@ -84,7 +84,7 @@ class Engine:
         for enemy in self.enemies:
             enemy.engine_ref = self
 
-   def handle_enemy_deaths(self):
+    def handle_enemy_deaths(self):
         dead_enemies = []
         for enemy in self.enemies:
             if not enemy.is_alive():
@@ -121,7 +121,7 @@ class Engine:
         for enemy in dead_enemies:
             self.enemies.remove(enemy)
 
- def generate_chest_loot(self):
+    def generate_chest_loot(self):
         loot = []
         spawned_names_this_chest = set()
         available_equipment = [OldSword, HatOfKnowledge, Glasses, Chainmail, GlovesOfDexterity, Spear, Buckler, LeggingsOfStrength, AchillesSandals, CurvedSword]
