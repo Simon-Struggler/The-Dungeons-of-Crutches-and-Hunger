@@ -46,7 +46,7 @@ class Engine:
             exit(1)
 
         self.game_map, player_x, player_y, self.enemies, self.items, self.chests = generate_dungeon(self.map_width, self.map_height, first_floor=True, current_floor=self.current_floor)
-        self.player = Player(player_x, player_y)
+        self.player = Player(player_x, player_y, self.difficulty)
         self.player.engine_ref = self
         
         # Раздаем ссылку на движок всем врагам при создании уровня
@@ -346,14 +346,24 @@ class Engine:
                 self.turn_counter += 1
                 enemies_alive = any(e.is_alive() for e in self.enemies)
                 
-                # Если врагов нет, голод уменьшается в 2 раза медленнее (каждый 2-й ход)
                 should_tick_hunger = True
-                if not enemies_alive and self.turn_counter % 2 != 0:
-                    should_tick_hunger = False
+                
+                if self.player.difficulty == 'easy':
+                    # На легкой голод тратится в 2 раза медленнее ВСЕГДА
+                    if self.turn_counter % 2 != 0:
+                        should_tick_hunger = False
+                elif self.player.difficulty == 'medium':
+                    # На средней голод тратится медленнее, если этаж зачищен
+                    if not enemies_alive and self.turn_counter % 2 != 0:
+                        should_tick_hunger = False
+                # На сложной (difficult) should_tick_hunger всегда True
                 
                 if should_tick_hunger:
                     self.player.tick_hunger()
-
+                    # На сложной сложности голод уходит в 2 раза быстрее
+                    if self.player.difficulty == 'difficult':
+                        self.player.tick_hunger()
+                        
                 self.handle_enemy_deaths()
 
                 self.player_actions_taken += 1
