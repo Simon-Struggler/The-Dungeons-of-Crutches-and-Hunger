@@ -37,6 +37,12 @@ class Engine:
         self.awaiting_quit_confirm = False # Состояние ожидания подтверждения выхода
         self.awaiting_attack_direction = False # Ожидание направления для атаки
 
+        self.cheat_mode = False
+        self.cheat_buffer = ""
+        self.cheat_used_key = False
+        self.cheat_used_eye = False
+        self.cheat_no_clip = False
+
         term_height, term_width = self.stdscr.getmaxyx()
         if term_height < self.map_height or term_width < self.map_width:
             self.stdscr.clear()
@@ -71,6 +77,8 @@ class Engine:
             self.map_width, self.map_height, player_x=px, player_y=py, first_floor=False, current_floor=self.current_floor
         )
         self.player_actions_taken = 0
+        self.cheat_used_key = False # Сброс читов на новом этаже
+        self.cheat_used_eye = False
         
         # Раздаем ссылку на движок врагам на новом этаже
         for enemy in self.enemies:
@@ -260,7 +268,47 @@ class Engine:
                     self.awaiting_quit_confirm = False # Отменили выход любой другой клавишей
                     self.message = "Quit cancelled."
                     continue # Пропускаем дальнейшую обработку этого нажатия
+                    
+            if self.cheat_mode:
+                if 32 <= key <= 126: # Если введен печатный символ ASCII
+                    self.cheat_buffer += chr(key)
+                    
+                    if len(self.cheat_buffer) == 3:
+                        # Обработка комбо
+                        if self.cheat_buffer == "key" and not self.cheat_used_key:
+                            key_item = DungeonKey(self.player.x, self.player.y)
+                            if not self.player.add_item(key_item):
+                                self.items.append(key_item)
+                            self.message = "A Dungeon Key materializes in your hands!"
+                            self.cheat_used_key = True
+                        elif self.cheat_buffer == "eye" and not self.cheat_used_eye:
+                            for y in range(self.game_map.height):
+                                for x in range(self.game_map.width):
+                                    self.game_map.explored[y][x] = True
+                            self.message = "The fog of war dissipates! Map revealed."
+                            self.cheat_used_eye = True
+                        elif self.cheat_buffer == "faz": 
+                            self.cheat_no_clip = not self.cheat_no_clip
+                            self.message = f"No-clip mode {'ACTIVATED' if self.cheat_no_clip else 'DEACTIVATED'}!"
+                        else:
+                            self.message = "The gods did not answer..."
+                        
+                        self.cheat_mode = False
+                        self.cheat_buffer = ""
+                    else:
+                        self.message = f"You prayed for a miracle... ({self.cheat_buffer})"
+                elif key == 27: # ESC отменяет молитву
+                    self.cheat_mode = False
+                    self.cheat_buffer = ""
+                    self.message = "Prayer cancelled."
+                continue # Важно: пропускаем остальной ввод, пока мы в режиме чита
 
+            if key == ord('p') and not self.awaiting_open_direction and not self.awaiting_attack_direction:
+                self.cheat_mode = True
+                self.cheat_buffer = ""
+                self.message = "You prayed for a miracle... (type 3 letters)"
+                continue
+                
             # --- ЛОГИКА АТАКИ В НАПРАВЛЕНИИ ---
             if self.awaiting_attack_direction:
                 dx, dy = 0, 0
@@ -399,23 +447,23 @@ class Engine:
         is_free_attack = (self.player.dex_stat >= 5 and self.player_actions_taken == 1)
 
         if key == curses.KEY_UP or key == ord('w'):
-            return MoveCommand(self.player, 0, -1, self.game_map, self.player, self.enemies, is_free_attack)
+            return MoveCommand(self.player, 0, -1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         elif key == curses.KEY_DOWN or key == ord('s'):
-            return MoveCommand(self.player, 0, 1, self.game_map, self.player, self.enemies, is_free_attack)
+            return MoveCommand(self.player, 0, 1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         elif key == curses.KEY_LEFT or key == ord('a'):
-            return MoveCommand(self.player, -1, 0, self.game_map, self.player, self.enemies, is_free_attack)
+            return MoveCommand(self.player, -1, 0, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         elif key == curses.KEY_RIGHT or key == ord('d'):
-            return MoveCommand(self.player, 1, 0, self.game_map, self.player, self.enemies, is_free_attack)
+            return MoveCommand(self.player, 1, 0, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         
-        # Диагональное движение (из настроек)
+        # Диагональное движение
         elif key == self.keybindings.get('move_nw'):
-            return MoveCommand(self.player, -1, -1, self.game_map, self.player, self.enemies, is_free_attack)
+            return MoveCommand(self.player, -1, -1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         elif key == self.keybindings.get('move_ne'):
-            return MoveCommand(self.player, 1, -1, self.game_map, self.player, self.enemies, is_free_attack)
+            return MoveCommand(self.player, 1, -1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         elif key == self.keybindings.get('move_sw'):
-            return MoveCommand(self.player, -1, 1, self.game_map, self.player, self.enemies, is_free_attack)
+            return MoveCommand(self.player, -1, 1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         elif key == self.keybindings.get('move_se'):
-            return MoveCommand(self.player, 1, 1, self.game_map, self.player, self.enemies, is_free_attack)
+            return MoveCommand(self.player, 1, 1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         # Клавиша F (Fire/Force)
         elif key == ord('f'):
             self.awaiting_attack_direction = True
