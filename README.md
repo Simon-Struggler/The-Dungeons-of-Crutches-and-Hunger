@@ -1,6 +1,10 @@
 # The-Dungeons-of-Crutches-and-Hunger
 This is my first attempt at creating a game using Python. I wanted to make a classic Roguelike, similar to Rogue 1980 or Moria 1983 - a procedurally generated turn-based dungeon crawler with RPG elements, permadeath and ASCII graphics.
 
+--- LAUNCHING THE GAME ---
+You're going to need the 'curses' package. Use the 'pip install windows-curses' command. Once done, launch the game by typing 'python main.py' or 'py main.py', whichever works for you.
+Though you could always launch this game in github codespaces. I'm pretty sure you don't need to pip install curses that way.
+
 --- CONTROLS ---
 1. Movement. You can move laterally using the arrowkeys or WASD. For diagonal movement you must bind the keys you prefer in the settings menu (the section where you choose a gamemode). The settings don't persist after quitting the game.
 2. Attacking. You can attack enemies by simply walking into them. There is also an option to force-attack a tile, for which you must either press the 'f' key and then a direction in which to attack, or press ctrl+direction key (lateral only).
