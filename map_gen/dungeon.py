@@ -2,7 +2,7 @@ import random
 import time
 import heapq
 from collections import deque
-from actors.enemy import Rat, Goblin, Skeleton
+from actors.enemy import Rat, Goblin, Skeleton, Nightmare, DeathKnight, RatKing, Phantasm, Lizardman, AngryRat, Construct
 from items.item import Item
 
 class Rect:
@@ -159,35 +159,71 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
                     if (up == '.' and down == ':') or (up == ':' and down == '.'):
                         game_map.tiles[y][x] = '+'
 
-    # Спавн врагов и предметов
+# --- СПАВН ВРАГОВ ---
     enemies = []
     items = []
     if len(rooms) > 1:
-        goblin_room_index = random.randint(1, len(rooms) - 1)
+        boss_room_index = random.randint(1, len(rooms) - 1)
     else:
-        goblin_room_index = -1
+        boss_room_index = -1
     
     for i, room in enumerate(rooms[1:]):
         room_index = i + 1
+        is_boss_room = (room_index == boss_room_index)
         
-        if room_index == goblin_room_index:
+        # --- ЛОГИКА БОССОВ (Ключники) ---
+        if is_boss_room:
             rx = random.randint(room.x1 + 1, room.x2 - 2)
             ry = random.randint(room.y1 + 1, room.y2 - 2)
             if game_map.tiles[ry][rx] == '.':
-                enemies.append(Goblin(rx, ry))
-        else:
+                if current_floor == 10:
+                    enemies.append(Nightmare(rx, ry))
+                elif current_floor == 8:
+                    enemies.append(DeathKnight(rx, ry))
+                elif current_floor == 6:
+                    enemies.append(RatKing(rx, ry))
+                else:
+                    enemies.append(Goblin(rx, ry))
+            continue # В комнате босса нет обычных врагов
+        # --- ЛОГИКА ОБЫЧНЫХ КОМНАТ ---
+        # Определяем, какие враги могут спавниться
+        eligible_enemies = []
+        if current_floor >= 8:
+            eligible_enemies.append(Phantasm) # Только фантомы (помимо крыс)
+        elif current_floor >= 5:
+            eligible_enemies.append(Lizardman)
+            if random.random() < 0.25: eligible_enemies.append(Phantasm)
+        elif current_floor >= 3:
+            eligible_enemies.append(Lizardman) # Заменяют скелетов
+        elif current_floor >= 1:
+            eligible_enemies.append(Skeleton)
+            
+        # Спавн Construct (начиная с 4 этажа, 50% шанс)
+        if current_floor >= 4 and random.random() < 0.50:
+            rx = random.randint(room.x1 + 1, room.x2 - 2)
+            ry = random.randint(room.y1 + 1, room.y2 - 2)
+            if game_map.tiles[ry][rx] == '.':
+                enemies.append(Construct(rx, ry))
+        
+        # Спавн основных врагов (1 на комнату)
+        if eligible_enemies:
+            EnemyClass = random.choice(eligible_enemies)
+            rx = random.randint(room.x1 + 1, room.x2 - 2)
+            ry = random.randint(room.y1 + 1, room.y2 - 2)
+            if game_map.tiles[ry][rx] == '.':
+                enemies.append(EnemyClass(rx, ry))
+        
+        # Спавн Крыс / Злых Крыс
+        if current_floor < 10: # На 10 этаже крыс нет
             if random.random() < 0.6:
                 num_rats = random.randint(1, 2)
+                RatClass = AngryRat if current_floor == 6 else Rat
                 for _ in range(num_rats):
                     rx = random.randint(room.x1 + 1, room.x2 - 2)
                     ry = random.randint(room.y1 + 1, room.y2 - 2)
                     if game_map.tiles[ry][rx] == '.':
-                        enemies.append(Rat(rx, ry))
-            elif random.random() < 0.3:
-                rx = random.randint(room.x1 + 1, room.x2 - 2)
-                ry = random.randint(room.y1 + 1, room.y2 - 2)
-                if game_map.tiles[ry][rx] == '.':
-                    enemies.append(Skeleton(rx, ry))
+                        enemies.append(RatClass(rx, ry))
+
 
     # --- СПАВН СУНДУКОВ ---
     chests = []
