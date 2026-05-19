@@ -30,9 +30,11 @@ class GameMap:
         self.tiles = [['#' for _ in range(width)] for _ in range(height)]
         self.explored = [[False for _ in range(width)] for _ in range(height)]
 
-    def is_walkable(self, x, y):
+    def is_walkable(self, x, y, ignore_walls=False):
         if 0 <= x < self.width and 0 <= y < self.height:
-            return self.tiles[y][x] in ['.', ':', 'L', '/'] # + закрытая дверь тоже проходима для логики (пока не добавим блокировку)
+            if ignore_walls: 
+                return True # При активном чите проходимо всё, кроме краёв карты
+            return self.tiles[y][x] in ['.', ':', 'L', '/']
         return False
 
     def reveal_area(self, start_x, start_y):
