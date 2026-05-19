@@ -44,11 +44,21 @@ class OldSword(Item):
                          description="It's a somewhat dull iron sword, carried by Skeletons. Not the best but it still beats bare fists. Equipping it grants +1 base damage",
                          max_stack=1, quantity=1, slot='main_hand', attack_bonus=1)
 
-# --- НОВАЯ ЭКИПИРОВКА ---
+class CurvedSword(Item):
+    def __init__(self, x, y):
+        super().__init__(x, y, name="Curved Sword", char=')', category='equipment', 
+                         description="It's a steel curved sword, carried by Lizardmen. A solid weapon. Equipping it grants +2 base damage",
+                         max_stack=1, quantity=1, slot='main_hand', attack_bonus=2)
+        
+class SoulReaper(Item):
+    def __init__(self, x, y):
+        super().__init__(x, y, name="", char=')', category='equipment', 
+                         description="It's the scythe that the Death Knight carried. Heavy and long, with a blade so sharp it can cut the life essence of your enemies. Equipping it grants +4 base damage and 25% crit rate.",
+                         max_stack=1, quantity=1, slot='main_hand', attack_bonus=4, crit_bonus=25, two_handed=True, ranged=True)
 
 class HatOfKnowledge(Item):
     def __init__(self, x, y):
-        super().__init__(x, y, name="Hat of Knowledge", char='h', category='equipment',
+        super().__init__(x, y, name="Hat of Knowledge", char='H', category='equipment',
                          description="A worn wizard hat. You hear faint whispers of old wisdom while wearing it. Increases XP gained from kills by 1.",
                          max_stack=1, quantity=1, slot='head', xp_bonus=1)
 
@@ -93,3 +103,21 @@ class AchillesSandals(Item):
         super().__init__(x, y, name="Achilles Sandals", char='A', category='equipment',
                          description="A pair of old sandals with buckles of tarnished gold. Wearing them makes you feel a little less vincible. Increases Maximum HP by 10 while equipped.",
                          max_stack=1, quantity=1, slot='feet', max_hp_bonus=10)
+
+class LifeGem(Item):
+    def __init__(self, x, y, quantity=1):
+        super().__init__(x, y, name="Life Gem", char='*', category='consumable', 
+                         description="A magical crystal that grants Constructs life but not sentience. Break it to recover 15 HP.",
+                         max_stack=10, quantity=quantity)
+    
+class PotionOfHealing(Item):
+    def __init__(self, x, y, quantity=1):
+        super().__init__(x, y, name="Potion of healing", char='h', category='consumable', 
+                         description="A small glass vial with red liquid. Tastes like wine. Use them sparingly. Gives 30 HP and 100 Hunger on use",
+                         max_stack=10, quantity=quantity, nutrition_value=100)
+        
+class WhiteMask(Item):
+    def __init__(self, x, y):
+        super().__init__(x, y, name="White Mask", char='W', category='equipment',
+                         description="An expressionless porcelain white mask. Cannot be broken by any normal means. You have a sudden urge to put it on...",
+                         max_stack=1, quantity=1, slot='face', stat_bonuses={'str': 3, 'dex': 3, 'con': 3}, dmg_reduction=1)
