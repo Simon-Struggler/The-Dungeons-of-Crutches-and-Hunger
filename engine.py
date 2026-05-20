@@ -290,6 +290,10 @@ class Engine:
                         elif self.cheat_buffer == "faz": 
                             self.cheat_no_clip = not self.cheat_no_clip
                             self.message = f"No-clip mode {'ACTIVATED' if self.cheat_no_clip else 'DEACTIVATED'}!"
+                        # НОВЫЙ ЧИТ:
+                        elif self.cheat_buffer == "dwn":
+                            self.go_downstairs()
+                            self.message = "You phase through the floor to the next level!"
                         else:
                             self.message = "The gods did not answer..."
                         
