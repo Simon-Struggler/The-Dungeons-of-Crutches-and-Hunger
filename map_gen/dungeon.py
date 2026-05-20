@@ -68,7 +68,7 @@ class GameMap:
                         elif not self.explored[ny][nx] and self.tiles[ny][nx] not in ['+', '#']:
                             queue.append((nx, ny))
 
-def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_floor=True, current_floor=1):
+def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_floor=True, current_floor=1, game_mode='endless'):
     random.seed(time.time())
     MARGIN = 4
     
@@ -242,11 +242,15 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
         if game_map.tiles[cy][cx] == '.':
             chests.append({'x': cx, 'y': cy, 'opened': False})
 
+    # Размещение игрока (если первый этаж - в центре первой комнаты)
     if first_floor:
         player_x, player_y = rooms[0].center()
     
-    stairs_x, stairs_y = rooms[-1].center()
-    game_map.tiles[stairs_y][stairs_x] = 'L'
+    # ЛЕСТНИЦА ВНИЗ
+    # В сюжетном режиме на 10 этаже нет лестницы (конец игры)
+    if not (game_mode == 'story' and current_floor == 10):
+        stairs_x, stairs_y = rooms[-1].center()
+        game_map.tiles[stairs_y][stairs_x] = 'L'
 
     game_map.reveal_area(player_x, player_y)
 
