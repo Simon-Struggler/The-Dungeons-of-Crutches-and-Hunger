@@ -197,11 +197,13 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
         elif current_floor >= 5:
             eligible_enemies.append(Lizardman)
             if random.random() < 0.25: eligible_enemies.append(Phantasm)
-        elif current_floor >= 3:
+        elif current_floor >= 4:
             eligible_enemies.append(Lizardman) # Заменяют скелетов
-        elif current_floor >= 1:
+        elif current_floor >= 2:
             eligible_enemies.append(Skeleton)
             if random.random() < 0.5: eligible_enemies.append(Zombie)
+        elif current_floor >= 1:
+            eligible_enemies.append(Zombie)
             
         # Спавн Construct (начиная с 4 этажа, 50% шанс)
         if current_floor >= 4 and random.random() < 0.50:
