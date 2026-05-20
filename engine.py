@@ -100,6 +100,8 @@ class Engine:
                 ex, ey = enemy.x, enemy.y
                 if enemy.char == 'G':
                     self.items.append(DungeonKey(ex, ey))
+                elif enemy.char == 'K': # Knight
+                    self.items.append(DungeonKey(ex, ey))
                 elif enemy.char == 'R': # RatKing
                     self.items.append(DungeonKey(ex, ey))
                     for _ in range(5): self.items.append(RatMeat(ex, ey))
