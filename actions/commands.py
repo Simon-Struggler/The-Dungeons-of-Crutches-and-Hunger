@@ -50,16 +50,13 @@ class MoveCommand(Command):
         else:
             # Логика врага
             if self.player and self.player.x == new_x and self.player.y == new_y:
-                from strategies.ai_behavior import MediumAggressiveAI, ShortAggressiveAI
-                if isinstance(self.entity.ai, MediumAggressiveAI):
+                from strategies.ai_behavior import AggressiveAI
+                if isinstance(self.entity.ai, AggressiveAI):
+                    # Враг атакует игрока
                     survived = self.entity.engine_ref.resolve_attack(self.entity, self.player)
                     self.entity.is_turn_consumed = True
-                    if survived:
-                        self.entity.engine_ref.resolve_attack(self.player, self.entity)
-                        self.player.reset_regen()
-                elif isinstance(self.entity.ai, ShortAggressiveAI):
-                    survived = self.entity.engine_ref.resolve_attack(self.entity, self.player)
-                    self.entity.is_turn_consumed = True
+                    
+                    # Игрок ВСЕГДА контратакует агрессивных врагов, если выжил
                     if survived:
                         self.entity.engine_ref.resolve_attack(self.player, self.entity)
                         self.player.reset_regen()
