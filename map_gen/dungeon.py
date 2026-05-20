@@ -2,7 +2,7 @@ import random
 import time
 import heapq
 from collections import deque
-from actors.enemy import Rat, Goblin, Skeleton, Nightmare, DeathKnight, RatKing, Phantasm, Lizardman, AngryRat, Construct
+from actors.enemy import Rat, Goblin, Skeleton, Nightmare, DeathKnight, RatKing, Phantasm, Lizardman, AngryRat, Construct, Knight, Zombie
 from items.item import Item
 
 class Rect:
@@ -36,7 +36,7 @@ class GameMap:
                 return True # При активном чите проходимо всё, кроме краёв карты
             return self.tiles[y][x] in ['.', ':', 'L', '/']
         return False
-
+    
     def reveal_area(self, start_x, start_y):
         queue = deque([(start_x, start_y)])
         
@@ -161,7 +161,7 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
                     if (up == '.' and down == ':') or (up == ':' and down == '.'):
                         game_map.tiles[y][x] = '+'
 
-# --- СПАВН ВРАГОВ ---
+    # --- СПАВН ВРАГОВ ---
     enemies = []
     items = []
     if len(rooms) > 1:
@@ -184,6 +184,8 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
                     enemies.append(DeathKnight(rx, ry))
                 elif current_floor == 6:
                     enemies.append(RatKing(rx, ry))
+                elif current_floor >= 4 and current_floor not in [6, 8, 10]:
+                    enemies.append(Knight(rx, ry))
                 else:
                     enemies.append(Goblin(rx, ry))
             continue # В комнате босса нет обычных врагов
@@ -199,6 +201,7 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
             eligible_enemies.append(Lizardman) # Заменяют скелетов
         elif current_floor >= 1:
             eligible_enemies.append(Skeleton)
+            if random.random() < 0.5: eligible_enemies.append(Zombie)
             
         # Спавн Construct (начиная с 4 этажа, 50% шанс)
         if current_floor >= 4 and random.random() < 0.50:
@@ -225,7 +228,6 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
                     ry = random.randint(room.y1 + 1, room.y2 - 2)
                     if game_map.tiles[ry][rx] == '.':
                         enemies.append(RatClass(rx, ry))
-
 
     # --- СПАВН СУНДУКОВ ---
     chests = []
