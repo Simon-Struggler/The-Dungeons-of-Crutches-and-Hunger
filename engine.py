@@ -24,6 +24,7 @@ class Engine:
         self.difficulty = settings["difficulty"]
         self.keybindings = keybindings
 
+        self.game_mode = settings.get("mode", "endless") # По умолчанию endless
         self.save_data = load_save(self.save_slot)
         self.session_start_time = time.time()
         self.player_actions_taken = 0
@@ -36,6 +37,7 @@ class Engine:
         self.turn_counter = 0 # Счетчик ходов для системы голода
         self.awaiting_quit_confirm = False # Состояние ожидания подтверждения выхода
         self.awaiting_attack_direction = False # Ожидание направления для атаки
+
 
         self.cheat_mode = False
         self.cheat_buffer = ""
@@ -51,7 +53,7 @@ class Engine:
             self.stdscr.getch()
             exit(1)
 
-        self.game_map, player_x, player_y, self.enemies, self.items, self.chests = generate_dungeon(self.map_width, self.map_height, first_floor=True, current_floor=self.current_floor)
+        self.game_map, player_x, player_y, self.enemies, self.items, self.chests = generate_dungeon(self.map_width, self.map_height, first_floor=True, current_floor=self.current_floor, game_mode=self.game_mode)
         self.player = Player(player_x, player_y, self.difficulty)
         self.player.engine_ref = self
         
@@ -74,12 +76,12 @@ class Engine:
             
         px, py = self.player.x, self.player.y
         self.game_map, _, _, self.enemies, self.items, self.chests = generate_dungeon(
-            self.map_width, self.map_height, player_x=px, player_y=py, first_floor=False, current_floor=self.current_floor
+            self.map_width, self.map_height, player_x=px, player_y=py, first_floor=False, current_floor=self.current_floor, game_mode=self.game_mode
         )
         self.player_actions_taken = 0
         self.cheat_used_key = False # Сброс читов на новом этаже
         self.cheat_used_eye = False
-        
+
         # Раздаем ссылку на движок врагам на новом этаже
         for enemy in self.enemies:
             enemy.engine_ref = self
@@ -109,8 +111,10 @@ class Engine:
                     self.items.append(DungeonKey(ex, ey))
                     self.items.append(SoulReaper(ex, ey))
                 elif enemy.char == 'N': # Nightmare
-                    self.items.append(DungeonKey(ex, ey))
                     self.items.append(WhiteMask(ex, ey))
+                    # Ключ выпадает только в бесконечном режиме
+                    if self.game_mode == 'endless':
+                        self.items.append(DungeonKey(ex, ey))
                 elif enemy.char == 'r' or enemy.char == 'a': # Крысы и Злые крысы
                     if random.random() < 0.5: self.items.append(RatMeat(ex, ey))
                 elif enemy.char == 'S':
@@ -244,6 +248,37 @@ class Engine:
         
         return defender.is_alive()
 
+    def check_victory(self):
+        if self.game_mode == 'story':
+            mask = self.player.equipment.get('face')
+            if mask and mask.name == "White Mask":
+                self.save_data['victories'] += 1
+                self.update_playtime_and_save()
+                self.show_victory_screen()
+                return True
+        return False
+
+    def show_victory_screen(self):
+        ending_text = [
+            "VICTORY",
+            "",
+            "Following the unexplicable urge to put on the mask",
+            "you take your rightful place as the new Nightmare,",
+            "roaming the lowest level of the Dungeons of Crutches and Hunger",
+            "and searching for the next fool to slay or pass on the mask.",
+            "",
+            f"Playtime: {time.time() - self.session_start_time + self.save_data.get('playtime', 0):.1f} seconds"
+        ]
+        self.stdscr.clear()
+        height, width = self.stdscr.getmaxyx()
+        for i, line in enumerate(ending_text):
+            x = (width - len(line)) // 2
+            try: self.stdscr.addstr(height // 2 - 5 + i, x, line)
+            except: pass
+        self.stdscr.refresh()
+        self.stdscr.getch()
+        exit()
+
     def run(self):
         while True:
             self.renderer.render(self.game_map, self.player, self.enemies, self.items, self.current_floor, self.message, self.battle_log, self.chests)
@@ -261,6 +296,9 @@ class Engine:
                 return "dead"
 
             key = self.stdscr.getch()
+
+            if self.check_victory():
+                return "victory"
             
             # --- ЛОГИКА ПОДТВЕРЖДЕНИЯ ВЫХОДА ---
             if self.awaiting_quit_confirm:
@@ -270,7 +308,8 @@ class Engine:
                     self.awaiting_quit_confirm = False # Отменили выход любой другой клавишей
                     self.message = "Quit cancelled."
                     continue # Пропускаем дальнейшую обработку этого нажатия
-                    
+
+            # --- ЛОГИКА ЧИТОВ (МОЛИТВ) ---
             if self.cheat_mode:
                 if 32 <= key <= 126: # Если введен печатный символ ASCII
                     self.cheat_buffer += chr(key)
@@ -314,7 +353,7 @@ class Engine:
                 self.cheat_buffer = ""
                 self.message = "You prayed for a miracle... (type 3 letters)"
                 continue
-                
+
             # --- ЛОГИКА АТАКИ В НАПРАВЛЕНИИ ---
             if self.awaiting_attack_direction:
                 dx, dy = 0, 0
@@ -343,8 +382,11 @@ class Engine:
                 continue # Переходим к следующему кадру, чтобы показать сообщение
             
             # Вызов инвентаря
-            if key == ord('i') and not self.awaiting_open_direction:
+            if key == ord('i') and not self.awaiting_open_direction and not self.awaiting_attack_direction and not self.cheat_mode:
                 Menu(self.stdscr).inventory_menu(self.player, self)
+                # Проверяем, не надел ли игрок маску в инвентаре
+                if self.check_victory():
+                    return "victory" # Завершаем игру
                 continue 
 
             # Логика ожидания направления для открытия двери
@@ -432,7 +474,7 @@ class Engine:
                     # На сложной сложности голод уходит в 2 раза быстрее
                     if self.player.difficulty == 'difficult':
                         self.player.tick_hunger()
-                        
+
                 self.handle_enemy_deaths()
 
                 self.player_actions_taken += 1
