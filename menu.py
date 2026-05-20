@@ -49,7 +49,12 @@ class Menu:
             height, width = self.stdscr.getmaxyx()
             data = load_save(slot_index)
             self.stdscr.addstr(2, (width - len(f"Save File {slot_index + 1}")) // 2, f"Save File {slot_index + 1}")
-            info_lines = [f"Playtime: {format_time(data['playtime'])}", f"Deaths: {data['deaths']}", f"Deepest Floor: {data['deepest_floor']}"]
+            info_lines = [
+                f"Playtime: {format_time(data['playtime'])}",
+                f"Deaths: {data['deaths']}",
+                f"Deepest Floor: {data['deepest_floor']}",
+                f"Story Victories: {data.get('victories', 0)}" # Добавлено
+            ]
             for i, line in enumerate(info_lines): self.draw_centered(4 + i, line)
             options = ["Select Save", "Clear Save"]
             for i, opt in enumerate(options):
@@ -67,7 +72,7 @@ class Menu:
 
     def game_mode_menu(self, slot_index, keybindings):
         options = [
-            {"label": "Story mode (Under construction)", "enabled": False, "action": "story"},
+            {"label": "Story mode", "enabled": True, "action": "story"},
             {"label": "Endless mode", "enabled": True, "action": "endless"},
             {"label": "Settings", "enabled": True, "action": "settings"},
             {"label": "Compendium", "enabled": False, "action": "compendium"},
@@ -98,7 +103,11 @@ class Menu:
                     if options[curr]["enabled"]: selected = curr; break
             elif key in (curses.KEY_ENTER, 10, 13):
                 act = options[selected]["action"]
-                if act == "endless": return self.endless_settings_menu(slot_index, keybindings)
+                if act == "story":
+                    self.story_intro_menu() # Показываем лор
+                    return self.endless_settings_menu(slot_index, keybindings, mode='story')
+                elif act == "endless":
+                    return self.endless_settings_menu(slot_index, keybindings, mode='endless')
                 elif act == "settings": self.settings_menu(keybindings) # Передаем keybindings
                 elif act == "quit": exit()
             elif key == ord('q'): exit()
@@ -160,8 +169,46 @@ class Menu:
                         keybindings[options[selected]] = new_key
             elif key in (27, ord('q')):
                 break
+            
+    # --- ПРЕДИСТОРИЯ СЮЖЕТНОГО РЕЖИМА ---
+    def story_intro_menu(self):
+        lore_text = [
+            "DUNGEONS OF CRUTCHES AND HUNGER",
+            "",
+            "The kingdom fell not to war, but to the Great Famine.",
+            "Desperate for salvation, the mad King delved into the ancient",
+            "depths beneath the castle, seeking a cursed artifact rumored to",
+            "grant eternal life. He never returned.",
+            "",
+            "Now, a creeping mist rises from the dungeons, turning the",
+            "starving into ravenous beasts and the dead into tireless sentinels.",
+            "As a desperate wanderer, you descend into the abyss, seeking",
+            "either the King's salvation or an end to your own suffering.",
+            "",
+            "Legends speak of a porcelain White Mask on the lowest level,",
+            "an artifact that holds dominion over the dungeon's nightmares.",
+            "Find it, and perhaps you will finally find peace...",
+            "or become the nightmare yourself."
+        ]
+        
+        while True:
+            self.stdscr.clear()
+            height, width = self.stdscr.getmaxyx()
+            
+            start_y = max(2, (height - len(lore_text)) // 2)
+            for i, line in enumerate(lore_text):
+                x = (width - len(line)) // 2
+                try: self.stdscr.addstr(start_y + i, x, line)
+                except: pass
+                
+            self.stdscr.addstr(height - 2, (width - len("Press ENTER to begin your descent...")) // 2, "Press ENTER to begin your descent...")
+            self.stdscr.refresh()
+            
+            key = self.stdscr.getch()
+            if key in (curses.KEY_ENTER, 10, 13):
+                break
 
-    def endless_settings_menu(self, slot_index, keybindings):
+    def endless_settings_menu(self, slot_index, keybindings, mode='endless'):
         sizes = [
             {"label": "Small (40x14)", "w": 60, "h": 20},
             {"label": "Medium (60x20)", "w": 80, "h": 24},
@@ -197,7 +244,7 @@ class Menu:
             elif key in (curses.KEY_DOWN, ord('s')) and selected_diff < len(diffs)-1: selected_diff += 1
             elif key in (curses.KEY_ENTER, 10, 13): break
 
-        return {"start": True, "slot": slot_index, "mode": "endless", "width": sizes[selected_size]["w"], "height": sizes[selected_size]["h"], "difficulty": diffs[selected_diff].lower()}
+        return {"start": True, "slot": slot_index, "mode": mode, "width": sizes[selected_size]["w"], "height": sizes[selected_size]["h"], "difficulty": diffs[selected_diff].lower()}
 
     # --- МЕНЮ ЛУТА (ПОДБОР С ПОЛА) ---
     def loot_menu(self, items_on_floor):
