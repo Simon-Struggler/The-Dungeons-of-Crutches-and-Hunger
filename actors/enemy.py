@@ -21,13 +21,13 @@ class Goblin(Entity):
 
 class Skeleton(Entity):
     def __init__(self, x: int, y: int):
-        super().__init__(x, y, char="S", hp=6, base_attack=2, str_stat=2, dex_stat=1, con_stat=1)
+        super().__init__(x, y, char="S", hp=8, base_attack=2, str_stat=2, dex_stat=1, con_stat=1)
         self.ai = MediumAggressiveAI()
-        self.xp_reward = 6
+        self.xp_reward = 10
 
 class Knight(Entity):
     def __init__(self, x: int, y: int):
-        super().__init__(x, y, char="K", hp=16, base_attack=3, str_stat=2, dex_stat=2, con_stat=3)
+        super().__init__(x, y, char="K", hp=20, base_attack=3, str_stat=2, dex_stat=2, con_stat=3)
         self.ai = ShortAggressiveAI()
         self.xp_reward = 40
 
@@ -39,21 +39,21 @@ class Zombie(Entity):
 
 class Lizardman(Entity):
     def __init__(self, x: int, y: int):
-        super().__init__(x, y, char="Z", hp=12, base_attack=3, str_stat=2, dex_stat=3, con_stat=1)
+        super().__init__(x, y, char="Z", hp=18, base_attack=3, str_stat=2, dex_stat=3, con_stat=2)
         self.ai = MediumAggressiveAI()
-        self.xp_reward = 30
+        self.xp_reward = 40
 
 class Construct(Entity):
     def __init__(self, x: int, y: int):
-        super().__init__(x, y, char="C", hp=15, base_attack=2, str_stat=1, dex_stat=1, con_stat=2)
+        super().__init__(x, y, char="C", hp=20, base_attack=2, str_stat=1, dex_stat=1, con_stat=2)
         self.ai = PassiveAI()
         self.xp_reward = 30 
 
 class Phantasm(Entity):
     def __init__(self, x: int, y: int):
-        super().__init__(x, y, char="P", hp=10, base_attack=1, str_stat=7, dex_stat=3, con_stat=1)
+        super().__init__(x, y, char="P", hp=10, base_attack=1, str_stat=9, dex_stat=3, con_stat=1)
         self.ai = MediumAggressiveAI()
-        self.xp_reward = 40
+        self.xp_reward = 50
 
 class RatKing(Entity):
     def __init__(self, x: int, y: int):
