@@ -102,7 +102,9 @@ class Engine:
                 ex, ey = enemy.x, enemy.y
                 if enemy.char == 'G':
                     self.items.append(DungeonKey(ex, ey))
-                elif enemy.char == 'K': # Knight
+                elif enemy.char == 'K':
+                    self.items.append(DungeonKey(ex, ey))
+                elif enemy.char == 'Q':
                     self.items.append(DungeonKey(ex, ey))
                 elif enemy.char == 'R': # RatKing
                     self.items.append(DungeonKey(ex, ey))
@@ -130,7 +132,7 @@ class Engine:
     def generate_chest_loot(self):
         loot = []
         spawned_names_this_chest = set()
-        available_equipment = [OldSword, HatOfKnowledge, Glasses, Chainmail, GlovesOfDexterity, Spear, Buckler, LeggingsOfStrength, AchillesSandals, CurvedSword]
+        available_equipment = [HatOfKnowledge, Glasses, Chainmail, GlovesOfDexterity, Spear, Buckler, LeggingsOfStrength, AchillesSandals, CurvedSword]
         
         unseen_equipment = [eq for eq in available_equipment if eq.__name__ not in self.spawned_equipment_names]
         if not unseen_equipment: unseen_equipment = available_equipment
