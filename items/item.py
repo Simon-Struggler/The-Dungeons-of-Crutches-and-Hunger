@@ -26,12 +26,11 @@ class Item:
         self.block_chance = block_chance
         self.max_hp_bonus = max_hp_bonus
 
-# --- БАЗОВЫЕ ПРЕДМЕТЫ ---
 class RatMeat(Item):
     def __init__(self, x, y, quantity=1):
         super().__init__(x, y, name="Rat Meat", char='m', category='consumable', 
-                         description="Recovers 4 HP and 75 Hunger on use.",
-                         max_stack=10, quantity=quantity, sub_category='food', nutrition_value=75, hp_value=4)
+                         description="Recovers 4 HP and 100 Hunger on use.",
+                         max_stack=10, quantity=quantity, sub_category='food', nutrition_value=100, hp_value=4)
 
 class DungeonKey(Item):
     def __init__(self, x, y):
@@ -41,7 +40,7 @@ class DungeonKey(Item):
 
 class OldSword(Item):
     def __init__(self, x, y):
-        super().__init__(x, y, name="Old Sword", char='s', category='equipment', 
+        super().__init__(x, y, name="Old Sword", char='!', category='equipment', 
                          description="A dull iron sword. +1 Min Damage",
                          max_stack=1, quantity=1, slot='main_hand', attack_bonus=1)
 
@@ -53,13 +52,13 @@ class CurvedSword(Item):
 
 class SoulReaper(Item):
     def __init__(self, x, y):
-        super().__init__(x, y, name="Soul Reaper", char=')', category='equipment', 
+        super().__init__(x, y, name="Soul Reaper", char='?', category='equipment', 
                          description="It's the scythe that the Death Knight carried. Heavy and long, with a blade so sharp it can cut the life essence of your enemies. Equipping it grants +4 base damage and 25% crit rate.",
-                         max_stack=1, quantity=1, slot='main_hand', attack_bonus=4, crit_bonus=25, two_handed=True, ranged=True)
+                         max_stack=1, quantity=1, slot='main_hand', attack_bonus=3, crit_bonus=15, two_handed=True, ranged=True)
 
 class WhiteMask(Item):
     def __init__(self, x, y):
-        super().__init__(x, y, name="White Mask", char='W', category='equipment',
+        super().__init__(x, y, name="White Mask", char='w', category='equipment',
                          description="An expressionless porcelain white mask. Cannot be broken by any normal means. You have a sudden urge to put it on...",
                          max_stack=1, quantity=1, slot='face', stat_bonuses={'str': 3, 'dex': 3, 'con': 3}, dmg_reduction=1)
 
@@ -120,5 +119,5 @@ class LifeGem(Item):
 class PotionOfHealing(Item):
     def __init__(self, x, y, quantity=1):
         super().__init__(x, y, name="Potion of healing", char='h', category='consumable', 
-                         description="A small glass vial with red liquid. Tastes like wine. Use them sparingly. Gives 30 HP and 100 Hunger on use",
-                         max_stack=10, quantity=quantity, sub_category='potion', nutrition_value=100, hp_value=30)
+                         description="A small glass vial with red liquid. Tastes like wine. Use them sparingly. Gives 30 HP and 150 Hunger on use",
+                         max_stack=10, quantity=quantity, sub_category='potion', nutrition_value=150, hp_value=30)
