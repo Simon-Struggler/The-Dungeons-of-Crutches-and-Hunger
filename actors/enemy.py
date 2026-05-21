@@ -64,7 +64,7 @@ class Whight(Entity):
 class Quazimorph(Entity):
     def __init__(self, x: int, y: int):
         super().__init__(x, y, char="Q", hp=60, base_attack=7, str_stat=7, dex_stat=4, con_stat=4)
-        self.ai = ShortAggressiveAI()
+        self.ai = MediumAggressiveAI()
         self.xp_reward = 250
 
 class RatKing(Entity):
