@@ -2,7 +2,7 @@ import random
 import time
 import heapq
 from collections import deque
-from actors.enemy import Rat, Goblin, Skeleton, Nightmare, DeathKnight, RatKing, Phantasm, Lizardman, AngryRat, Construct, Knight, Zombie
+from actors.enemy import Rat, Goblin, Skeleton, Nightmare, DeathKnight, RatKing, Phantasm, Lizardman, AngryRat, Construct, Knight, Zombie, Whight, Quazimorph
 from items.item import Item
 
 class Rect:
@@ -178,7 +178,9 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
             rx = random.randint(room.x1 + 1, room.x2 - 2)
             ry = random.randint(room.y1 + 1, room.y2 - 2)
             if game_map.tiles[ry][rx] == '.':
-                if current_floor == 10:
+                if current_floor > 10:
+                    enemies.append(Quazimorph(rx, ry))                
+                elif current_floor == 10:
                     enemies.append(Nightmare(rx, ry))
                 elif current_floor == 8:
                     enemies.append(DeathKnight(rx, ry))
@@ -192,13 +194,16 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
         # --- ЛОГИКА ОБЫЧНЫХ КОМНАТ ---
         # Определяем, какие враги могут спавниться
         eligible_enemies = []
-        if current_floor >= 8:
-            eligible_enemies.append(Phantasm) # Только фантомы (помимо крыс)
+        if current_floor >= 10:
+            eligible_enemies.append(Whight)
+        elif current_floor >= 8:
+            eligible_enemies.append(Phantasm) 
+            if random.random() < 0.25: eligible_enemies.append(Whight)
         elif current_floor >= 5:
             eligible_enemies.append(Lizardman)
             if random.random() < 0.25: eligible_enemies.append(Phantasm)
         elif current_floor >= 4:
-            eligible_enemies.append(Lizardman) # Заменяют скелетов
+            eligible_enemies.append(Lizardman)
         elif current_floor >= 2:
             eligible_enemies.append(Skeleton)
             if random.random() < 0.5: eligible_enemies.append(Zombie)
@@ -221,7 +226,7 @@ def generate_dungeon(map_width, map_height, player_x=None, player_y=None, first_
                 enemies.append(EnemyClass(rx, ry))
         
         # Спавн Крыс / Злых Крыс
-        if current_floor < 10: # На 10 этаже крыс нет
+        if current_floor < 10:
             if random.random() < 0.6:
                 num_rats = random.randint(1, 2)
                 RatClass = AngryRat if current_floor == 6 else Rat
