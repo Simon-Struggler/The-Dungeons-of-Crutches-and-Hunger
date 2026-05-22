@@ -6,10 +6,10 @@ from engine import Engine
 
 # Глобальные настройки управления
 keybindings = {
-    'move_nw': None, # Северо-Запад
-    'move_ne': None, # Северо-Восток
-    'move_sw': None, # Юго-Запад
-    'move_se': None  # Юго-Восток
+    'move_nw': ord('['), # Северо-Запад
+    'move_ne': ord(']'), # Северо-Восток
+    'move_sw': ord(';'), # Юго-Запад
+    'move_se': ord("'")  # Юго-Восток
 }
 
 def main(stdscr):
