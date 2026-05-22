@@ -2,6 +2,7 @@ import curses
 import random
 import time
 from ui.renderer import Renderer
+from core.event_system import Subject, CombatLog
 from actions.commands import MoveCommand, DescendCommand, WaitCommand, GetCommand, AttackCommand
 from map_gen.dungeon import generate_dungeon
 from actors.player import Player
@@ -10,8 +11,9 @@ from items.item import RatMeat, DungeonKey, Item, OldSword, HatOfKnowledge, Glas
 from save_manager import load_save, save_data
 from menu import Menu
 
-class Engine:
+class Engine(Subject):
     def __init__(self, stdscr, settings, keybindings):
+        super().__init__()
         self.stdscr = stdscr
         self.renderer = Renderer(stdscr)
         self.current_floor = 1
@@ -31,7 +33,8 @@ class Engine:
         self.player_actions_taken = 0
         self.awaiting_open_direction = False
 
-        self.battle_log = [] # Лог боя
+        self.combat_log = CombatLog()
+        self.attach(self.combat_log)
         self.max_log_lines = 100
         self.spawned_equipment_names = set() # Память о том, какая экипировка уже выпадала
         self.chests = []
@@ -92,12 +95,12 @@ class Engine:
         for enemy in self.enemies:
             if not enemy.is_alive():
                 dead_enemies.append(enemy)
-                self.add_log(f"The {enemy.char} dies!")
+                self.notify(f"The {enemy.char} dies!")
                 
                 old_level = self.player.level
                 self.player.gain_xp(enemy.xp_reward)
                 if self.player.level > old_level:
-                    self.add_log(f"LEVEL UP! You are now level {self.player.level}!")
+                    self.notify(f"LEVEL UP! You are now level {self.player.level}!")
                 
                 # ДРОП ВРАГОВ (через Фабрику)
                 ex, ey = enemy.x, enemy.y
@@ -156,12 +159,6 @@ class Engine:
                 if hasattr(enemy.ai, 'is_awake'):
                     enemy.ai.is_awake = True
 
-    def add_log(self, msg):
-        """Добавляет сообщение в лог боя."""
-        self.battle_log.append(msg)
-        if len(self.battle_log) > self.max_log_lines:
-            self.battle_log.pop(0)
-
     def resolve_attack(self, attacker, defender):
         """Обрабатывает атаку от attacker к defender, возвращает True если защитник выжил."""
         is_player_attacking = (attacker.char == '@')
@@ -179,19 +176,19 @@ class Engine:
             
             # Спец-сообщение для Щита: если урон не удвоился, значит щит поглотил крит
             if is_player_attacking and actual_dmg < damage and actual_dmg > 0:
-                 self.add_log(f"CRITICAL! {atk_name} hit {def_name}, but they blocked part of it for {actual_dmg} damage!")
+                 self.notify(f"CRITICAL! {atk_name} hit {def_name}, but they blocked part of it for {actual_dmg} damage!")
             else:
-                 self.add_log(f"CRITICAL! {atk_name} hit {def_name} for {actual_dmg} damage!")
+                 self.notify(f"CRITICAL! {atk_name} hit {def_name} for {actual_dmg} damage!")
         else:
             if defender.try_dodge():
                 if is_player_attacking:
-                    self.add_log(f"{def_name.capitalize()} dodged your attack!")
+                    self.notify(f"{def_name.capitalize()} dodged your attack!")
                 else:
-                    self.add_log(f"You dodged {atk_name.lower()}'s attack!")
+                    self.notify(f"You dodged {atk_name.lower()}'s attack!")
                 return True
             else:
                 actual_dmg = defender.take_damage(damage, is_crit=False)
-                self.add_log(f"{atk_name} hit {def_name} for {actual_dmg} damage.")
+                self.notify(f"{atk_name} hit {def_name} for {actual_dmg} damage.")
         
         return defender.is_alive()
 
@@ -228,7 +225,7 @@ class Engine:
 
     def run(self):
         while True:
-            self.renderer.render(self.game_map, self.player, self.enemies, self.items, self.current_floor, self.message, self.battle_log, self.chests)
+            self.renderer.render(self.game_map, self.player, self.enemies, self.items, self.current_floor, self.message, self.combat_log, self.chests)
             self.message = ""
 
             if not self.player.is_alive():
