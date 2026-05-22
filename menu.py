@@ -210,10 +210,10 @@ class Menu:
 
     def endless_settings_menu(self, slot_index, keybindings, mode='endless'):
         sizes = [
-            {"label": "Small (40x14)", "w": 60, "h": 20},
-            {"label": "Medium (60x20)", "w": 80, "h": 24},
-            {"label": "Large (80x24)", "w": 100, "h": 28},
-            {"label": "Extra Large (100x28)", "w": 120, "h": 32}
+            {"label": "Small (60x20)", "w": 60, "h": 20},
+            {"label": "Medium (80x24)", "w": 80, "h": 24},
+            {"label": "Large (100x28)", "w": 100, "h": 28},
+            {"label": "Extra Large (120x32)", "w": 120, "h": 32}
         ]
         selected_size = 2
         while True:
