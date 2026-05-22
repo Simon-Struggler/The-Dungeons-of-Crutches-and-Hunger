@@ -33,7 +33,7 @@ class Knight(Entity):
 
 class Zombie(Entity):
     def __init__(self, x: int, y: int):
-        super().__init__(x, y, char="z", hp=8, base_attack=1, str_stat=1, dex_stat=1, con_stat=2)
+        super().__init__(x, y, char="z", hp=8, base_attack=1, str_stat=1, dex_stat=1, con_stat=1)
         self.ai = ShortAggressiveAI()
         self.xp_reward = 4
 
