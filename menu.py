@@ -25,7 +25,7 @@ class Menu:
         while True:
             self.stdscr.clear()
             height, width = self.stdscr.getmaxyx()
-            self.stdscr.addstr(2, (width - len("ROGUELIKE")) // 2, "ROGUELIKE")
+            self.stdscr.addstr(2, (width - len("DUNGEONS OF CRUTCHES AND HUNGER")) // 2, "DUNGEONS OF CRUTCHES AND HUNGER")
             self.stdscr.addstr(4, (width - len("Select Save File:")) // 2, "Select Save File:")
             for i in range(3):
                 data = load_save(i)
