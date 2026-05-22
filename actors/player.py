@@ -27,6 +27,9 @@ class Player(Entity):
         self.hunger = 300
         self._update_max_hunger()
 
+    def _get_unique_equipment(self):
+        return list(set(item for item in self.equipment.values() if item is not None))
+
     def _get_equip_stat_bonus(self, stat_name):
         """Суммирует бонусы к характеристикам от всей экипировки."""
         total = 0
@@ -40,20 +43,19 @@ class Player(Entity):
     def get_total_con(self): return self.con_stat + self._get_equip_stat_bonus('con')
 
     def _recalculate_max_hp(self):
-        """Пересчитывает максимальное здоровье с учетом CON и экипировки."""
         con_bonus = (self.con_stat - 1) * 2
-        equip_hp_bonus = sum(item.max_hp_bonus for item in self.equipment.values() if item and hasattr(item, 'max_hp_bonus'))
+        equip_hp_bonus = sum(item.max_hp_bonus for item in self._get_unique_equipment() if hasattr(item, 'max_hp_bonus'))
         
         new_max = self.base_max_hp + con_bonus + equip_hp_bonus
         
         if new_max > self.max_hp:
             diff = new_max - self.max_hp
             self.max_hp = new_max
-            self.hp += diff # Экипировка лечит
+            self.hp += diff
         else:
             old_max = self.max_hp
             self.max_hp = new_max
-            self.hp = min(self.hp, self.max_hp) # Снятие экипировки урезает текущее ХП
+            self.hp = min(self.hp, self.max_hp)
 
     def _update_max_hunger(self):
         new_max = 300 + ((self.con_stat - 1) * 30)
@@ -114,7 +116,7 @@ class Player(Entity):
             item.quantity -= qty
             if item.quantity <= 0:
                 self.inventory.remove(item)
-
+                
     def use_item(self, item):
         if item.category == 'consumable':
             hp_healed = 0
@@ -189,7 +191,7 @@ class Player(Entity):
 
     def get_attack_damage(self):
         """Вычисляет урон с учетом экипировки."""
-        total_bonus = sum(item.attack_bonus for item in self.equipment.values() if item)
+        total_bonus = sum(item.attack_bonus for item in self._get_unique_equipment())
         
         # Оружие увеличивает МИНИМАЛЬНЫЙ урон
         min_dmg = self.base_attack + total_bonus
@@ -213,34 +215,32 @@ class Player(Entity):
         return random.randint(min_dmg, max_dmg)
 
     def get_crit_chance(self):
-        base_crit = 1 + (self.get_total_dex() * 3) # База от ЛОВКОСТИ
-        equip_crit = sum(item.crit_bonus for item in self.equipment.values() if item and hasattr(item, 'crit_bonus'))
+        base_crit = 1 + (self.get_total_dex() * 3)
+        equip_crit = sum(item.crit_bonus for item in self._get_unique_equipment() if hasattr(item, 'crit_bonus'))
         return base_crit + equip_crit
 
     def take_damage(self, amount, is_crit=False):
         # 1. Блокировка Щитом
-        block_chance = sum(item.block_chance for item in self.equipment.values() if item and hasattr(item, 'block_chance'))
+        block_chance = sum(item.block_chance for item in self._get_unique_equipment() if hasattr(item, 'block_chance'))
         if block_chance > 0:
             import random
             if random.randint(1, 100) <= block_chance:
                 if is_crit:
-                    # Крит пробивает блок, но становится обычной атакой
-                    return super().take_damage(amount // 2) # Половина урона (или можно вернуть amount без удвоения, если уже прошел double)
+                    return super().take_damage(amount // 2)
                 else:
-                    return 0 # Полный блок
+                    return 0
 
         # 2. Снижение урона от CON и Кольчуги
         total_reduction = 0
         if self.con_stat >= 5: total_reduction += 1
-        total_reduction += sum(item.dmg_reduction for item in self.equipment.values() if item and hasattr(item, 'dmg_reduction'))
+        total_reduction += sum(item.dmg_reduction for item in self._get_unique_equipment() if hasattr(item, 'dmg_reduction'))
         
         actual_damage = max(0, amount - total_reduction)
         self.hp -= actual_damage
         return actual_damage
 
     def gain_xp(self, amount):
-        # Бонус опыта от Шляпы
-        xp_bonus = sum(item.xp_bonus for item in self.equipment.values() if item and hasattr(item, 'xp_bonus'))
+        xp_bonus = sum(item.xp_bonus for item in self._get_unique_equipment() if hasattr(item, 'xp_bonus'))
         self.xp += amount + xp_bonus
         if self.xp >= self.xp_to_next_level():
             self.level_up()
@@ -320,8 +320,7 @@ class Player(Entity):
 
     # UI Методы
     def get_attack_power(self):
-        """Возвращает строку для UI вида '2-4' или '3'."""
-        total_bonus = sum(item.attack_bonus for item in self.equipment.values() if item)
+        total_bonus = sum(item.attack_bonus for item in self._get_unique_equipment())
         
         min_dmg = self.base_attack + total_bonus
         max_dmg = self.base_attack + self.get_total_str()
