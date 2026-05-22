@@ -5,6 +5,7 @@ from ui.renderer import Renderer
 from actions.commands import MoveCommand, DescendCommand, WaitCommand, GetCommand, AttackCommand
 from map_gen.dungeon import generate_dungeon
 from actors.player import Player
+from factories.spawner import ItemFactory
 from items.item import RatMeat, DungeonKey, Item, OldSword, HatOfKnowledge, Glasses, Chainmail, GlovesOfDexterity, Spear, Buckler, LeggingsOfStrength, AchillesSandals, CurvedSword, SoulReaper, WhiteMask, LifeGem, PotionOfHealing
 from save_manager import load_save, save_data
 from menu import Menu
@@ -98,72 +99,16 @@ class Engine:
                 if self.player.level > old_level:
                     self.add_log(f"LEVEL UP! You are now level {self.player.level}!")
                 
-                # ДРОП ВРАГОВ
+                # ДРОП ВРАГОВ (через Фабрику)
                 ex, ey = enemy.x, enemy.y
-                if enemy.char == 'G':
-                    self.items.append(DungeonKey(ex, ey))
-                elif enemy.char == 'K':
-                    self.items.append(DungeonKey(ex, ey))
-                elif enemy.char == 'Q':
-                    self.items.append(DungeonKey(ex, ey))
-                elif enemy.char == 'R': # RatKing
-                    self.items.append(DungeonKey(ex, ey))
-                    for _ in range(5): self.items.append(RatMeat(ex, ey))
-                elif enemy.char == 'D': # DeathKnight
-                    self.items.append(DungeonKey(ex, ey))
-                    self.items.append(SoulReaper(ex, ey))
-                elif enemy.char == 'N': # Nightmare
-                    self.items.append(WhiteMask(ex, ey))
-                    # Ключ выпадает только в бесконечном режиме
-                    if self.game_mode == 'endless':
-                        self.items.append(DungeonKey(ex, ey))
-                elif enemy.char == 'r' or enemy.char == 'a': # Крысы и Злые крысы
-                    if random.random() < 0.5: self.items.append(RatMeat(ex, ey))
-                elif enemy.char == 'S':
-                    self.items.append(OldSword(ex, ey))
-                elif enemy.char == 'Z':
-                    self.items.append(CurvedSword(ex, ey))
-                elif enemy.char == 'C':
-                    self.items.append(LifeGem(ex, ey))
+                dropped_items = ItemFactory.get_enemy_drop(enemy.char, ex, ey, self.game_mode)
+                self.items.extend(dropped_items)
                     
         for enemy in dead_enemies:
             self.enemies.remove(enemy)
 
     def generate_chest_loot(self):
-        loot = []
-        spawned_names_this_chest = set()
-        available_equipment = [HatOfKnowledge, Glasses, Chainmail, GlovesOfDexterity, Spear, Buckler, LeggingsOfStrength, AchillesSandals, CurvedSword]
-        
-        unseen_equipment = [eq for eq in available_equipment if eq.__name__ not in self.spawned_equipment_names]
-        if not unseen_equipment: unseen_equipment = available_equipment
-            
-        # 1 гарантированный предмет экипировки
-        eq_class = random.choice(unseen_equipment)
-        loot.append(eq_class(0, 0))
-        self.spawned_equipment_names.add(eq_class.__name__)
-        spawned_names_this_chest.add(eq_class.__name__)
-        
-        # 1 Гарантированное Зелье Лечения
-        loot.append(PotionOfHealing(0, 0))
-        
-        # От 0 до 2 дополнительных предметов (consumables или equipment)
-        for _ in range(random.randint(0, 2)):
-            if random.random() < 0.6: # 60% шанс еды или камня
-                if random.random() < 0.5:
-                    loot.append(RatMeat(0, 0))
-                else:
-                    loot.append(LifeGem(0, 0))
-            else: # 40% шанс ещё одной экипировки
-                possible_eq = [eq for eq in available_equipment if eq.__name__ not in spawned_names_this_chest]
-                if not possible_eq:
-                    loot.append(RatMeat(0, 0))
-                    continue
-                eq_class = random.choice(possible_eq)
-                loot.append(eq_class(0, 0))
-                self.spawned_equipment_names.add(eq_class.__name__)
-                spawned_names_this_chest.add(eq_class.__name__)
-                
-        return loot
+        return ItemFactory.generate_chest_loot(self.spawned_equipment_names)
     
     def handle_get(self):
         """Обработка нажатия кнопки 'g' (подобрать предмет)."""
