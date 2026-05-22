@@ -32,7 +32,7 @@ class Menu:
                 text = f"Save {i+1} - Floor: {data['deepest_floor']} | Deaths: {data['deaths']}"
                 display_text = f">> {text} <<" if i == selected else f"   {text}   "
                 self.draw_centered(6 + i * 2, display_text, is_highlighted=(i == selected))
-            self.stdscr.addstr(height - 2, (width - len("W/S: Navigate | ENTER: Select | Q: Quit")) // 2, "W/S: Navigate | ENTER: Select | Q: Quit")
+            self.stdscr.addstr(height - 2, (width - len("W/S: Navigate | ENTER: Select | ESC/Q: Quit")) // 2, "W/S: Navigate | ENTER: Select | ESC/Q: Quit")
             self.stdscr.refresh()
             key = self.stdscr.getch()
             if key in (curses.KEY_UP, ord('w')) and selected > 0: selected -= 1
@@ -40,7 +40,7 @@ class Menu:
             elif key in (curses.KEY_ENTER, 10, 13):
                 action = self.save_info_menu(selected, keybindings)
                 if action and action.get("start"): return action
-            elif key == ord('q'): exit()
+            elif key in (27, ord('q')): exit()
 
     def save_info_menu(self, slot_index, keybindings):
         selected_option = 0
@@ -88,7 +88,7 @@ class Menu:
                     self.draw_centered(5 + i, f">> {opt['label']} <<", is_highlighted=True)
                 else:
                     self.draw_centered(5 + i, f"   {opt['label']}   ")
-            self.stdscr.addstr(height - 2, (width - len("W/S: Navigate | ENTER: Select | Q: Quit")) // 2, "W/S: Navigate | ENTER: Select | Q: Quit")
+            self.stdscr.addstr(height - 2, (width - len("W/S: Navigate | ENTER: Select | ESC/Q: Quit")) // 2, "W/S: Navigate | ENTER: Select | ESC/Q: Quit")
             self.stdscr.refresh()
             key = self.stdscr.getch()
             if key in (curses.KEY_UP, ord('w')):
@@ -110,7 +110,7 @@ class Menu:
                     return self.endless_settings_menu(slot_index, keybindings, mode='endless')
                 elif act == "settings": self.settings_menu(keybindings) # Передаем keybindings
                 elif act == "quit": exit()
-            elif key == ord('q'): exit()
+            elif key in (27, ord('q')): exit()
 
     # --- МЕНЮ НАСТРОЕК ---
     def settings_menu(self, keybindings):
@@ -122,7 +122,7 @@ class Menu:
         selected = 0
         
         # Зарезервированные клавиши, которые нельзя переназначить
-        reserved = [ord('w'), ord('a'), ord('s'), ord('d'), ord('g'), ord('o'), ord('i'), ord('f'), ord('q'), ord('v'),
+        reserved = [ord('w'), ord('a'), ord('s'), ord('d'), ord('g'), ord('o'), ord('i'), ord('f'), ord('q'), ord('v'), ord('p'),
                     curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]
 
         while True:
@@ -277,7 +277,7 @@ class Menu:
                 else:
                     # Если не выбрали ни одного, берем тот, на котором стоит курсор
                     return [selected]
-            elif key == 27: # ESC
+            elif key in (27, ord('q')): # ESC
                 return []
 
         # --- ВНУТРИИГРОВОЕ МЕНЮ (3 КОЛОНКИ) ---
@@ -336,7 +336,7 @@ class Menu:
                     line = f"{prefix}{item.name} x{item.quantity}"
                     self.stdscr.addstr(3 + i, col2_end + 2, line, curses.A_REVERSE if active_panel == 2 and selected_item == i else curses.A_NORMAL)
 
-            self.stdscr.addstr(height-2, 2, "A/D: Switch Panel | W/S: Navigate | ENTER: Action | I/Q: Close")
+            self.stdscr.addstr(height-2, 2, "A/D: Switch Panel | W/S: Navigate | ENTER: Action | ESC/I/Q: Close")
             self.stdscr.refresh()
 
             key = self.stdscr.getch()
