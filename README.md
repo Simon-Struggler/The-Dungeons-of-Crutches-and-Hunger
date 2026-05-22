@@ -7,7 +7,7 @@ You're going to need the 'curses' package. Use the 'pip install windows-curses' 
 Though you could always launch this game in github codespaces. I'm pretty sure you don't need to pip install curses that way.
 
 --- CONTROLS ---
-1. Movement. You can move laterally using the arrowkeys or WASD. For diagonal movement you must bind the keys you prefer in the settings menu (the section where you choose a gamemode). The settings don't persist after quitting the game. Also, you can use the 'e' key to skip your turn. Holding it long enough will begin a meditation process which restores HP until disturbed, just watch out for hunger.
+1. Movement. You can move laterally using the arrowkeys or WASD. For diagonal movement you can bind the keys you prefer in the settings menu (the section where you choose a gamemode), the default are "[" "]" ";" "'". The settings don't persist after quitting the game. Also, you can use the 'e' key to skip your turn. Holding it long enough will begin a meditation process which restores HP until disturbed, just watch out for hunger.
 2. Attacking. You can attack enemies by simply walking into them. There is also an option to force-attack a tile, for which you must either press the 'f' key and then a direction in which to attack, or press ctrl+direction key (lateral only).
 3. Inventory. Press the 'i' key to open a multipurpose character menu. 
               The left section shows your stat-line. Pressing Enter on any stat will give you the option of either increasing it or reading information about the stat.
