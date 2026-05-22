@@ -4,7 +4,7 @@ class Renderer:
     def __init__(self, stdscr):
         self.stdscr = stdscr
 
-    def render(self, game_map, player, enemies, items, current_floor, message, battle_log, chests):
+    def render(self, game_map, player, enemies, items, current_floor, message, combat_log, chests):
         self.stdscr.clear()
         height, width = self.stdscr.getmaxyx()
 
@@ -107,12 +107,15 @@ class Renderer:
             except: pass
         
         max_log_display = height - log_y_start - 2
-        start_idx = max(0, len(battle_log) - max_log_display)
+        
+        # Берем логи напрямую из объекта-наблюдателя
+        logs = combat_log.get_logs()
+        start_idx = max(0, len(logs) - max_log_display)
         
         y_offset = 1
-        for i in range(start_idx, len(battle_log)):
+        for i in range(start_idx, len(logs)):
             if log_y_start + y_offset < height - 1:
-                log_msg = battle_log[i][:width - log_x - 1]
+                log_msg = logs[i][:width - log_x - 1]
                 try: self.stdscr.addstr(log_y_start + y_offset, log_x, log_msg)
                 except: pass
                 y_offset += 1
