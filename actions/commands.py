@@ -110,7 +110,7 @@ class AttackCommand(Command):
                 self.engine.resolve_attack(target_range1, player)
                 player.reset_regen()
         else:
-            self.engine_ref.notify("You swing at the air.")
+            self.entity.engine_ref.notify("You swing at the air.")
 
 class GetCommand(Command):
     def __init__(self, engine):
