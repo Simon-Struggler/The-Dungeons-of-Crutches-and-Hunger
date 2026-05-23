@@ -1,8 +1,10 @@
 import curses
+from ui.colors import init_colors, COLOR_PAIR_DEFAULT
 
 class Renderer:
     def __init__(self, stdscr):
         self.stdscr = stdscr
+        init_colors()
 
     def render(self, game_map, player, enemies, items, current_floor, message, combat_log, chests):
         self.stdscr.clear()
@@ -74,7 +76,8 @@ class Renderer:
             draw_x, draw_y = ix + 1, iy + 3
             if draw_y < height and draw_x < width and game_map.explored[iy][ix]:
                 char = 'I' if len(item_list) > 1 else item_list[0].char
-                try: self.stdscr.addch(draw_y, draw_x, char)
+                color = COLOR_PAIR_DEFAULT if len(item_list) > 1 else item_list[0].color # Кучка предметов белая, одинокий предмет цветной
+                try: self.stdscr.addch(draw_y, draw_x, char, curses.color_pair(color))
                 except: pass
 
         # Сундуки
@@ -89,7 +92,7 @@ class Renderer:
         for enemy in enemies:
             draw_x, draw_y = enemy.x + 1, enemy.y + 3
             if enemy.is_alive() and game_map.explored[enemy.y][enemy.x] and draw_y < height and draw_x < width:
-                try: self.stdscr.addch(draw_y, draw_x, enemy.char)
+                try: self.stdscr.addch(draw_y, draw_x, enemy.char, curses.color_pair(enemy.color))
                 except: pass
 
         # Игрок
