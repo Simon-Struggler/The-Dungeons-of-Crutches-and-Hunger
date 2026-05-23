@@ -1,10 +1,11 @@
 import random
 
 class Entity:
-    def __init__(self, x: int, y: int, char: str, hp: int, base_attack: int, str_stat: int, dex_stat: int, con_stat: int):
+    def __init__(self, x: int, y: int, char: str, hp: int, base_attack: int, str_stat: int, dex_stat: int, con_stat: int, color=0):
         self.x = x
         self.y = y
         self.char = char
+        self.color = color 
         self.base_attack = base_attack
         self.str_stat = str_stat
         self.dex_stat = dex_stat
