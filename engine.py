@@ -72,6 +72,14 @@ class Engine(Subject):
         self.session_start_time = current_time
         save_data(self.save_slot, self.save_data)
 
+    def update_compendium(self, category, class_name, field, increment=1):
+        """Обновляет запись в компендиуме."""
+        if class_name in self.save_data['compendium'][category]:
+            entry = self.save_data['compendium'][category][class_name]
+            entry['discovered'] = True
+            if field in entry:
+                entry[field] += increment
+
     def go_downstairs(self):
         self.current_floor += 1
         if self.current_floor > self.save_data['deepest_floor']:
@@ -106,7 +114,10 @@ class Engine(Subject):
                 ex, ey = enemy.x, enemy.y
                 dropped_items = ItemFactory.get_enemy_drop(enemy.char, ex, ey, self.game_mode)
                 self.items.extend(dropped_items)
-                    
+
+                # КОМПЕНДИУМ: Открываем врага и +1 убийство
+                self.update_compendium("enemies", type(enemy).__name__, "kills")
+
         for enemy in dead_enemies:
             self.enemies.remove(enemy)
 
@@ -125,6 +136,7 @@ class Engine(Subject):
             if self.player.add_item(item):
                 self.items.remove(item)
                 self.message = f"Picked up {item.name}."
+                self.update_compendium("items", type(item).__name__, None)
             else:
                 self.message = f"You have enough '{item.name}' already."
         else:
@@ -137,6 +149,7 @@ class Engine(Subject):
                 if self.player.add_item(item):
                     self.items.remove(item)
                     self.message = f"Picked up {item.name}."
+                    self.update_compendium("items", type(item).__name__, None)
                 else:
                     self.message = f"Cannot pick up {item.name}."
 
@@ -189,6 +202,10 @@ class Engine(Subject):
             else:
                 actual_dmg = defender.take_damage(damage, is_crit=False)
                 self.notify(f"{atk_name} hit {def_name} for {actual_dmg} damage.")
+                    
+                # Запоминаем, кто атаковал игрока (для компендиума)
+                if not is_player_attacking:
+                    self.last_attacker_class = type(attacker).__name__
         
         return defender.is_alive()
 
@@ -229,6 +246,9 @@ class Engine(Subject):
             self.message = ""
 
             if not self.player.is_alive():
+                # КОМПЕНДИУМ: +1 смерть от врага
+                if hasattr(self, 'last_attacker_class'):
+                    self.update_compendium("enemies", self.last_attacker_class, "deaths_by")
                 self.save_data['deaths'] += 1
                 self.update_playtime_and_save()
                 self.stdscr.clear()

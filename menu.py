@@ -75,7 +75,7 @@ class Menu:
             {"label": "Story mode", "enabled": True, "action": "story"},
             {"label": "Endless mode", "enabled": True, "action": "endless"},
             {"label": "Settings", "enabled": True, "action": "settings"},
-            {"label": "Compendium", "enabled": False, "action": "compendium"},
+            {"label": "Compendium", "enabled": True, "action": "compendium"},
             {"label": "Quit", "enabled": True, "action": "quit"}
         ]
         selected = next((i for i, opt in enumerate(options) if opt["enabled"]), 0)
@@ -109,6 +109,8 @@ class Menu:
                 elif act == "endless":
                     return self.endless_settings_menu(slot_index, keybindings, mode='endless')
                 elif act == "settings": self.settings_menu(keybindings) # Передаем keybindings
+                elif act == "compendium":
+                    self.compendium_menu(load_save(slot_index)["compendium"])
                 elif act == "quit": exit()
             elif key in (27, ord('q')): exit()
 
@@ -167,6 +169,95 @@ class Menu:
                         self.stdscr.getch()
                     else:
                         keybindings[options[selected]] = new_key
+            elif key in (27, ord('q')):
+                break
+
+    # --- КОМПЕНДИУМ ---
+    def compendium_menu(self, compendium_data):
+        tabs = ["enemies", "items"]
+        tab_names = {"enemies": "--- BESTIARY ---", "items": "--- ITEMS ---"}
+        current_tab = 0
+        selected = 0
+        viewing_detail = False
+        detail_text = []
+
+        while True:
+            self.stdscr.clear()
+            height, width = self.stdscr.getmaxyx()
+            
+            if not viewing_detail:
+                tab_key = tabs[current_tab]
+                self.stdscr.addstr(1, (width - len(tab_names[tab_key])) // 2, tab_names[tab_key], curses.A_BOLD)
+                self.stdscr.addstr(2, (width - len("A/D: Switch Tab | W/S: Navigate | ENTER: View | Q: Back")) // 2, "A/D: Switch Tab | W/S: Navigate | ENTER: View | Q: Back")
+                
+                entries = list(compendium_data[tab_key].items())
+                if not entries:
+                    self.stdscr.addstr(4, 2, "Empty")
+                else:
+                    for i, (class_name, data) in enumerate(entries):
+                        if i == selected:
+                            prefix = "> "
+                            style = curses.A_REVERSE
+                        else:
+                            prefix = "  "
+                            style = curses.A_NORMAL
+                        
+                        if data["discovered"]:
+                            from core.compendium import ENEMY_TEMPLATES, ITEM_TEMPLATES
+                            templates = ENEMY_TEMPLATES if tab_key == "enemies" else ITEM_TEMPLATES
+                            template = templates.get(class_name, {"char": "?", "name": class_name})
+                            char = template["char"]
+                            name = template["name"]
+                            
+                            line = f"{prefix}[{char}] {name}"
+                            if tab_key == "enemies":
+                                line += f" (Kills: {data['kills']} | Deaths: {data['deaths_by']})"
+                        else:
+                            line = f"{prefix}[?] Unknown"
+                        
+                        self.stdscr.addstr(4 + i, 2, line, style)
+            else:
+                self.stdscr.addstr(1, 2, "Detail View (ESC/Q: Back)")
+                for i, line in enumerate(detail_text):
+                    self.stdscr.addstr(3 + i, 4, line)
+
+            self.stdscr.refresh()
+            key = self.stdscr.getch()
+
+            if viewing_detail:
+                if key in (27, ord('q')):
+                    viewing_detail = False
+                continue
+
+            entries = list(compendium_data[tabs[current_tab]].items())
+
+            if key in (curses.KEY_UP, ord('w')) and selected > 0: selected -= 1
+            elif key in (curses.KEY_DOWN, ord('s')) and selected < len(entries) - 1: selected += 1
+            elif key in (curses.KEY_LEFT, ord('a')): 
+                current_tab = (current_tab - 1) % 2
+                selected = 0
+            elif key in (curses.KEY_RIGHT, ord('d')):
+                current_tab = (current_tab + 1) % 2
+                selected = 0
+            elif key in (curses.KEY_ENTER, 10, 13):
+                if entries:
+                    class_name, data = entries[selected]
+                    if data["discovered"]:
+                        from core.compendium import ENEMY_TEMPLATES, ITEM_TEMPLATES
+                        templates = ENEMY_TEMPLATES if tabs[current_tab] == "enemies" else ITEM_TEMPLATES
+                        template = templates.get(class_name, {})
+                        detail_text = [
+                            f"Name: {template.get('name', class_name)}",
+                            f"Symbol: {template.get('char', '?')}",
+                            "",
+                            template.get("description", "No description."),
+                            ""
+                        ]
+                        if tabs[current_tab] == "enemies":
+                            detail_text.append(f"Kills: {data['kills']}")
+                            detail_text.append(f"Deaths by this enemy: {data['deaths_by']}")
+                        
+                        viewing_detail = True
             elif key in (27, ord('q')):
                 break
             
