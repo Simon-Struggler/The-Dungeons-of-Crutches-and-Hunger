@@ -1,15 +1,25 @@
 import curses
-import os
-import platform
 from menu import Menu
 from engine import Engine
 
-# Глобальные настройки управления
+# Единый словарь привязок клавиш. Формат: 'id': ord('символ')
 keybindings = {
-    'move_nw': ord('['), # Северо-Запад
-    'move_ne': ord(']'), # Северо-Восток
-    'move_sw': ord(';'), # Юго-Запад
-    'move_se': ord("'")  # Юго-Восток
+    'move_n': ord('w'),
+    'move_s': ord('s'),
+    'move_w': ord('a'),
+    'move_e': ord('d'),
+    'move_nw': ord('['),
+    'move_ne': ord(']'),
+    'move_sw': ord(';'),
+    'move_se': ord("'"),
+    'wait': ord('e'),
+    'get': ord('g'),
+    'open': ord('o'),
+    'inventory': ord('i'),
+    'force_attack': ord('f'),
+    'descend': ord('v'),
+    'pray': ord('p'),
+    'quit': ord('q')
 }
 
 def main(stdscr):
@@ -17,11 +27,9 @@ def main(stdscr):
     stdscr.keypad(True)
     
     menu = Menu(stdscr)
-    # Передаем keybindings в меню, чтобы мы могли их менять
     settings = menu.main_menu(keybindings)
     
     if settings and settings.get("start"):
-        # Передаем keybindings в движок
         engine = Engine(stdscr, settings, keybindings)
         result = engine.run()
         if result == "dead":

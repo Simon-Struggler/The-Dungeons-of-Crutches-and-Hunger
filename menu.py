@@ -114,39 +114,36 @@ class Menu:
                 elif act == "quit": exit()
             elif key in (27, ord('q')): exit()
 
-    # --- МЕНЮ НАСТРОЕК ---
     def settings_menu(self, keybindings):
-        options = ['move_nw', 'move_ne', 'move_sw', 'move_se']
-        display_names = {
-            'move_nw': 'Move North-West', 'move_ne': 'Move North-East',
-            'move_sw': 'Move South-West', 'move_se': 'Move South-East'
-        }
+        # Список всех действий и их имен
+        action_list = [
+            ('move_n', 'Move North'), ('move_s', 'Move South'), 
+            ('move_w', 'Move West'), ('move_e', 'Move East'),
+            ('move_nw', 'Move North-West'), ('move_ne', 'Move North-East'), 
+            ('move_sw', 'Move South-West'), ('move_se', 'Move South-East'),
+            ('wait', 'Wait / Regen'), ('get', 'Get Item'), ('open', 'Open Door/Chest'),
+            ('inventory', 'Inventory'), ('force_attack', 'Force Attack'),
+            ('descend', 'Descend Stairs'), ('pray', 'Pray (Cheat)'), ('quit', 'Quit Game')
+        ]
+        
         selected = 0
         
-        # Зарезервированные клавиши, которые нельзя переназначить
-        reserved = [ord('w'), ord('a'), ord('s'), ord('d'), ord('g'), ord('o'), ord('i'), ord('f'), ord('q'), ord('v'), ord('p'),
-                    curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]
+        # Клавиши, которые нельзя переназначить (используются для навигации в меню)
+        reserved_keys = [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT, 
+                         curses.KEY_ENTER, 10, 13, 27] # Стрелки, Enter, Esc
 
         while True:
             self.stdscr.clear()
             height, width = self.stdscr.getmaxyx()
-            self.stdscr.addstr(2, (width - len("SETTINGS")) // 2, "SETTINGS")
+            self.stdscr.addstr(2, (width - len("CONTROLS")) // 2, "CONTROLS")
             
-            for i, opt in enumerate(options):
-                key_code = keybindings[opt]
-                if key_code is None:
-                    key_name = "Not Bound"
-                elif key_code == curses.KEY_UP: key_name = "Up Arrow"
-                elif key_code == curses.KEY_DOWN: key_name = "Down Arrow"
-                elif key_code == curses.KEY_LEFT: key_name = "Left Arrow"
-                elif key_code == curses.KEY_RIGHT: key_name = "Right Arrow"
-                else:
-                    try: key_name = chr(key_code).upper()
-                    except ValueError: key_name = f"Key({key_code})"
+            for i, (action_id, display_name) in enumerate(action_list):
+                key_code = keybindings.get(action_id)
+                key_name = self._get_key_name(key_code)
                 
-                line = f"{display_names[opt]}: {key_name}"
+                line = f"{display_name}: {key_name}"
                 prefix = "> " if i == selected else "  "
-                self.stdscr.addstr(5 + i * 2, (width - len(line) - 4) // 2, f"{prefix}{line}", 
+                self.stdscr.addstr(5 + i, (width - len(line) - 4) // 2, f"{prefix}{line}", 
                                    curses.A_REVERSE if i == selected else curses.A_NORMAL)
 
             self.stdscr.addstr(height-2, (width - len("ENTER: Rebind | ESC/Q: Back")) // 2, "ENTER: Rebind | ESC/Q: Back")
@@ -154,23 +151,43 @@ class Menu:
             key = self.stdscr.getch()
 
             if key in (curses.KEY_UP, ord('w')) and selected > 0: selected -= 1
-            elif key in (curses.KEY_DOWN, ord('s')) and selected < len(options)-1: selected += 1
+            elif key in (curses.KEY_DOWN, ord('s')) and selected < len(action_list)-1: selected += 1
             elif key in (curses.KEY_ENTER, 10, 13):
-                # Процесс перепривязки
-                self.stdscr.addstr(height-4, (width - len("Press a new key to bind...")) // 2, "Press a new key to bind... (ESC to cancel)")
+                action_id, _ = action_list[selected]
+                self.stdscr.addstr(height-4, (width - len("Press a new key to bind... (ESC to cancel)")) // 2, "Press a new key to bind... (ESC to cancel)")
                 self.stdscr.refresh()
                 new_key = self.stdscr.getch()
                 
-                if new_key != 27: # Если не ESC
-                    all_bound = [v for v in keybindings.values() if v is not None]
-                    if new_key in reserved or new_key in all_bound:
-                        self.stdscr.addstr(height-4, (width - len("That key is already in use!")) // 2, "That key is already in use!     ")
+                if new_key not in reserved_keys and new_key != 27: # 27 is ESC
+                    # Проверка на дубликаты
+                    existing_action = None
+                    for a_id, k_code in keybindings.items():
+                        if k_code == new_key:
+                            existing_action = a_id
+                            break
+                    
+                    if existing_action and existing_action != action_id:
+                        self.stdscr.addstr(height-4, (width - len(f"Key already bound to another action!       ")) // 2, "Key already bound to another action!       ")
                         self.stdscr.refresh()
                         self.stdscr.getch()
                     else:
-                        keybindings[options[selected]] = new_key
+                        keybindings[action_id] = new_key
             elif key in (27, ord('q')):
                 break
+
+    def _get_key_name(self, key_code):
+        """Вспомогательный метод для красивого отображения клавиши."""
+        if key_code is None: return "Not Bound"
+        if key_code == curses.KEY_UP: return "Up Arrow"
+        if key_code == curses.KEY_DOWN: return "Down Arrow"
+        if key_code == curses.KEY_LEFT: return "Left Arrow"
+        if key_code == curses.KEY_RIGHT: return "Right Arrow"
+        if key_code == 32: return "Space"
+        if key_code == 9: return "Tab"
+        try: 
+            return chr(key_code).upper()
+        except ValueError: 
+            return f"Key({key_code})"
 
     # --- КОМПЕНДИУМ ---
     def compendium_menu(self, compendium_data):

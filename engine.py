@@ -215,7 +215,6 @@ class Engine(Subject):
             if mask and mask.name == "White Mask":
                 self.save_data['victories'] += 1
                 self.update_playtime_and_save()
-                self.show_victory_screen()
                 return True
         return False
 
@@ -295,7 +294,6 @@ class Engine(Subject):
                         elif self.cheat_buffer == "faz": 
                             self.cheat_no_clip = not self.cheat_no_clip
                             self.message = f"No-clip mode {'ACTIVATED' if self.cheat_no_clip else 'DEACTIVATED'}!"
-                        # НОВЫЙ ЧИТ:
                         elif self.cheat_buffer == "dwn":
                             self.go_downstairs()
                             self.message = "You phase through the floor to the next level!"
@@ -310,9 +308,9 @@ class Engine(Subject):
                     self.cheat_mode = False
                     self.cheat_buffer = ""
                     self.message = "Prayer cancelled."
-                continue # Важно: пропускаем остальной ввод, пока мы в режиме чита
+                continue # Пропускаем остальной ввод, пока мы в режиме чита
 
-            if key == ord('p') and not self.awaiting_open_direction and not self.awaiting_attack_direction:
+            if key == self.keybindings.get('pray') and not self.awaiting_open_direction and not self.awaiting_attack_direction and not self.cheat_mode:
                 self.cheat_mode = True
                 self.cheat_buffer = ""
                 self.message = "You prayed for a miracle... (type 3 letters)"
@@ -321,11 +319,11 @@ class Engine(Subject):
             # --- ЛОГИКА АТАКИ В НАПРАВЛЕНИИ ---
             if self.awaiting_attack_direction:
                 dx, dy = 0, 0
-                if key == curses.KEY_UP or key == ord('w'): dy = -1
-                elif key == curses.KEY_DOWN or key == ord('s'): dy = 1
-                elif key == curses.KEY_LEFT or key == ord('a'): dx = -1
-                elif key == curses.KEY_RIGHT or key == ord('d'): dx = 1
-                # Диагональные направления из настроек
+                if key == curses.KEY_UP or key == self.keybindings.get('move_n'): dy = -1
+                elif key == curses.KEY_DOWN or key == self.keybindings.get('move_s'): dy = 1
+                elif key == curses.KEY_LEFT or key == self.keybindings.get('move_w'): dx = -1
+                elif key == curses.KEY_RIGHT or key == self.keybindings.get('move_e'): dx = 1
+                # Диагонали
                 elif key == self.keybindings.get('move_nw'): dx, dy = -1, -1
                 elif key == self.keybindings.get('move_ne'): dx, dy = 1, -1
                 elif key == self.keybindings.get('move_sw'): dx, dy = -1, 1
@@ -340,48 +338,45 @@ class Engine(Subject):
                 continue
 
             # --- ИНИЦИАЦИЯ ВЫХОДА ---
-            if key == ord('q'):
+            if key == self.keybindings.get('quit') and not self.awaiting_open_direction and not self.awaiting_attack_direction and not self.cheat_mode:
                 self.awaiting_quit_confirm = True
                 self.message = "Are you sure you want to quit the game? (press ESC to confirm)"
-                continue # Переходим к следующему кадру, чтобы показать сообщение
+                continue
             
             # Вызов инвентаря
-            if key == ord('i') and not self.awaiting_open_direction and not self.awaiting_attack_direction and not self.cheat_mode:
+            if key == self.keybindings.get('inventory') and not self.awaiting_open_direction and not self.awaiting_attack_direction and not self.cheat_mode:
                 Menu(self.stdscr).inventory_menu(self.player, self)
-                # Проверяем, не надел ли игрок маску в инвентаре
-                if self.check_victory():
-                    return "victory" # Завершаем игру
+                if self.check_victory(): return "victory"
                 continue 
 
             # Логика ожидания направления для открытия двери
             if self.awaiting_open_direction:
                 dx, dy = 0, 0
-                if key == curses.KEY_UP or key == ord('w'): dy = -1
-                elif key == curses.KEY_DOWN or key == ord('s'): dy = 1
-                elif key == curses.KEY_LEFT or key == ord('a'): dx = -1
-                elif key == curses.KEY_RIGHT or key == ord('d'): dx = 1
+                if key == curses.KEY_UP or key == self.keybindings.get('move_n'): dy = -1
+                elif key == curses.KEY_DOWN or key == self.keybindings.get('move_s'): dy = 1
+                elif key == curses.KEY_LEFT or key == self.keybindings.get('move_w'): dx = -1
+                elif key == curses.KEY_RIGHT or key == self.keybindings.get('move_e'): dx = 1
+                elif key == self.keybindings.get('move_nw'): dx, dy = -1, -1
+                elif key == self.keybindings.get('move_ne'): dx, dy = 1, -1
+                elif key == self.keybindings.get('move_sw'): dx, dy = -1, 1
+                elif key == self.keybindings.get('move_se'): dx, dy = 1, 1
                 
                 if dx != 0 or dy != 0:
                     tx, ty = self.player.x + dx, self.player.y + dy
                     if 0 <= tx < self.game_map.width and 0 <= ty < self.game_map.height:
-                        
-                        # 1. Попытка открыть дверь
+                        # Логика открытия двери или сундука
                         if self.game_map.tiles[ty][tx] == '+':
                             self.game_map.tiles[ty][tx] = '/'
                             self.game_map.explored[ty][tx] = False
                             self.game_map.reveal_area(tx, ty)
                             self.wake_enemies_in_explored()
                             self.message = "You opened the door."
-                        
-                        # 2. Попытка открыть сундук
                         else:
                             target_chest = next((c for c in self.chests if c['x'] == tx and c['y'] == ty), None)
                             if target_chest:
-                                # Генерация лута при ПЕРВОМ открытии
                                 if not target_chest['opened']:
                                     target_chest['opened'] = True
-                                    loot = self.generate_chest_loot()
-                                    # Сразу добавляем предметы на пол под сундуком
+                                    loot = ItemFactory.generate_chest_loot(self.spawned_equipment_names)
                                     for item in loot:
                                         item.x, item.y = tx, ty
                                         self.items.append(item)
@@ -389,18 +384,14 @@ class Engine(Subject):
                                 else:
                                     self.message = "You look inside the chest..."
                                 
-                                # Проверяем, есть ли предметы на клетке сундука (для любого открытия)
                                 items_here = [i for i in self.items if i.x == tx and i.y == ty]
                                 if items_here:
                                     picked_indices = Menu(self.stdscr).loot_menu(items_here)
-                                    
                                     for index in sorted(picked_indices, reverse=True):
                                         item = items_here[index]
                                         if self.player.add_item(item):
                                             self.items.remove(item)
                                             self.message += f" Picked up {item.name}."
-                                else:
-                                    self.message += " It is empty."
                             else:
                                 self.message = "You can't open that."
                 else:
@@ -458,16 +449,18 @@ class Engine(Subject):
     def handle_input(self, key):
         is_free_attack = (self.player.dex_stat >= 5 and self.player_actions_taken == 1)
 
-        if key == curses.KEY_UP or key == ord('w'):
+        # --- ДВИЖЕНИЕ ---
+        # Проверяем и пользовательскую привязку, и стандартные стрелочки
+        if key == self.keybindings.get('move_n') or key == curses.KEY_UP:
             return MoveCommand(self.player, 0, -1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
-        elif key == curses.KEY_DOWN or key == ord('s'):
+        elif key == self.keybindings.get('move_s') or key == curses.KEY_DOWN:
             return MoveCommand(self.player, 0, 1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
-        elif key == curses.KEY_LEFT or key == ord('a'):
+        elif key == self.keybindings.get('move_w') or key == curses.KEY_LEFT:
             return MoveCommand(self.player, -1, 0, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
-        elif key == curses.KEY_RIGHT or key == ord('d'):
+        elif key == self.keybindings.get('move_e') or key == curses.KEY_RIGHT:
             return MoveCommand(self.player, 1, 0, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         
-        # Диагональное движение
+        # Диагональное движение (стрелочек для диагоналей нет, только привязки)
         elif key == self.keybindings.get('move_nw'):
             return MoveCommand(self.player, -1, -1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         elif key == self.keybindings.get('move_ne'):
@@ -476,28 +469,26 @@ class Engine(Subject):
             return MoveCommand(self.player, -1, 1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
         elif key == self.keybindings.get('move_se'):
             return MoveCommand(self.player, 1, 1, self.game_map, self.player, self.enemies, is_free_attack, self.cheat_no_clip)
-        # Клавиша F (Fire/Force)
-        elif key == ord('f'):
-            self.awaiting_attack_direction = True
-            self.message = "Attack in which direction? (W/A/S/D)"
-            return None    
-        # Ctrl + WASD (Прямые комбинации для надежности)
-        elif key == 23: # Ctrl + W
-            return AttackCommand(self.player, 0, -1, self)
-        elif key == 19: # Ctrl + S
-            return AttackCommand(self.player, 0, 1, self)
-        elif key == 1:  # Ctrl + A
-            return AttackCommand(self.player, -1, 0, self)
-        elif key == 4:  # Ctrl + D
-            return AttackCommand(self.player, 1, 0, self)
-        elif key == ord('e'):
+        
+        # --- ДЕЙСТВИЯ ---
+        elif key == self.keybindings.get('wait'):
             return WaitCommand()
-        elif key == ord('v'):
-            return DescendCommand(self.player, self.game_map, self)
-        elif key == ord('g'): # Кнопка подбора предметов
+        elif key == self.keybindings.get('get'):
             return GetCommand(self)
-        elif key == ord('o'):
+        elif key == self.keybindings.get('open'):
+            # Возвращаем открытие!
             self.awaiting_open_direction = True
             self.message = "What do you want to open? (Direction)"
             return None
+        elif key == self.keybindings.get('force_attack'):
+            self.awaiting_attack_direction = True
+            self.message = "Attack in which direction? (W/A/S/D)"
+            return None
+        elif key == self.keybindings.get('descend'):
+            return DescendCommand(self.player, self.game_map, self)
+        elif key == self.keybindings.get('quit'):
+            self.awaiting_quit_confirm = True
+            self.message = "Are you sure you want to quit the game? (press ESC to confirm)"
+            return None
+        
         return None
